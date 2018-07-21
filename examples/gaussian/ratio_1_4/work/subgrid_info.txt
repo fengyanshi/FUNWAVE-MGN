@@ -1,0 +1,2 @@
+% GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
+95  95  4  5  5
