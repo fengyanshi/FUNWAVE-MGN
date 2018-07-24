@@ -1,0 +1,2 @@
+% GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
+400  270  4  45  120

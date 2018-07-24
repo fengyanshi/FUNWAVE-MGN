@@ -95,18 +95,6 @@ PROGRAM MASTER
 	                   CALL LOAD_DATA( Nsubgrid )
 	                   CALL TWOWAY_NESTING( Nsubgrid )
 					   
-!-----Temporary
-	!VTYPE=1
-	!CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,Eta_TILE(1:Mloc,1:Nloc,Nsubgrid-1),VTYPE,PERIODIC,Nsubgrid-1)
-
-	!VTYPE=2
-	!CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,U_TILE(1:Mloc,1:Nloc,Nsubgrid-1),VTYPE,PERIODIC,Nsubgrid-1)
-	!CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,Ubar_TILE(1:Mloc,1:Nloc,Nsubgrid-1),VTYPE,PERIODIC,Nsubgrid-1)
-
-	!VTYPE=3
-	!CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,V_TILE(1:Mloc,1:Nloc,Nsubgrid-1),VTYPE,PERIODIC,Nsubgrid-1)
-	!CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,Vbar_TILE(1:Mloc,1:Nloc,Nsubgrid-1),VTYPE,PERIODIC,Nsubgrid-1)
-!-----Temporary
 					    
 	                ENDDO
 

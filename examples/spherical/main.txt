@@ -1,0 +1,175 @@
+16,17d15
+<      REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
+< 
+37,38c35
+<        MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)  !ykchoi 07/24/2018
+< 	 MASK_Tile(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
+---
+>        MASK_Tile(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
+46c43
+< !      We don't need latitude
+---
+> !      We dont need latitude
+70c67
+< 	 !ParentDomainID(:,:,ng)=-99;
+---
+> 	 ParentDomainID(:,:,ng)=-99;
+135,145c132,142
+< !	 DO J=1,Nloc
+< !	    DO I=1,Mloc
+< !	       II = mbox1 + ( I-1+(Mloc-2*Nghost)*npx )/isk !actually npx=0 at west
+< !		   JJ = nbox1 + ( J-1+(Nloc-2*Nghost)*npy )/isk !actually npy=0 at south
+< 
+< !		   CALL FIND_PROCESSOR( parent_area_i, PX, II, &
+< !	                            parent_area_j, PY, JJ, area_i, area_j )
+< 
+< !	       ParentDomainID(I,J,ng) = ProcessorID(area_i,area_j)
+< !	    ENDDO
+< !	 ENDDO
+---
+> 	 DO J=1,Nloc
+> 	    DO I=1,Mloc
+> 	       II = mbox1 + ( I-1+(Mloc-2*Nghost)*npx )/isk !actually npx=0 at west
+> 		   JJ = nbox1 + ( J-1+(Nloc-2*Nghost)*npy )/isk !actually npy=0 at south
+> 
+> 		   CALL FIND_PROCESSOR( parent_area_i, PX, II, &
+> 	                            parent_area_j, PY, JJ, area_i, area_j )
+> 
+> 	       ParentDomainID(I,J,ng) = ProcessorID(area_i,area_j)
+> 	    ENDDO
+> 	 ENDDO
+209,251c206,220
+< !------------------------------------------------------------------
+< !------------------------------------------------ ykchoi 07/24/2018
+< ! Young-Kwang Choi
+< ! In this version, the easiest way is applied to see propagation of water waves in water-land cells.
+< !==============MASK_STRUC
+< 	 MASK_STRUC_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
+<        ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
+< 
+< 	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_STRUC_Tile(1:ParMloc,1:ParNloc,ng-1) )
+< 	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+< 
+<        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+<                   rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
+< 	 
+< 	 MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+< 	 DEALLOCATE( rMASKParent, rMASKChild )
+< 
+< !==============MASK
+< 	 MASK_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
+<        ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
+< 
+< 	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_Tile(1:ParMloc,1:ParNloc,ng-1) )
+< 	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+< 
+<        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+<                   rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
+<        
+< 	 MASK_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+< 	 DEALLOCATE( rMASKParent, rMASKChild )
+< 	 
+<        !DO J=1,Nloc
+<        !DO I=1,Mloc
+<        ! IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
+<        !  MASK_Tile(I,J,ng)=0
+<        !  Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
+<        ! ELSE
+<        !  MASK_Tile(I,J,ng)=1
+<        ! ENDIF
+<        !ENDDO
+<        !ENDDO
+< 
+< !==============MASK9
+< 	MASK9_Tile(:,:,ng) = 1  !1 - Boussinesq;  0 - SWE
+---
+> 
+> ! calculate MASK and MASK9 separately 
+>        DO J=1,Nloc
+>        DO I=1,Mloc
+>         IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
+>          MASK_Tile(I,J,ng)=0
+>          Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
+>         ELSE
+>          MASK_Tile(I,J,ng)=1
+>         ENDIF
+>        ENDDO
+>        ENDDO
+> 
+>       !DO J=Jbeg-1,Jend+1
+>       !DO I=Ibeg-1,Iend+1
+263,271c232
+<       ENDDO
+< 
+< # if defined(PARALLEL)
+<       CALL PHI_INT_EXCH( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+< 	CALL PHI_INT_EXCH( MASK_Tile(1:Mloc,1:Nloc,ng) )
+<       CALL PHI_INT_EXCH( MASK9_Tile(1:Mloc,1:Nloc,ng) )
+< # endif
+< !------------------------------------------------ ykchoi 07/24/2018
+< !------------------------------------------------------------------
+---
+>       ENDDO
+432,434d392
+< 
+<      MASK_STRUC(1:Mloc,1:Nloc) = MASK_STRUC_Tile(1:Mloc,1:Nloc,ng)  !ykchoi 07/24/2018
+<      
+551,552c509,510
+< 
+<      CALL UPDATE_MASK  !ykchoi 07/23/2018
+---
+> 
+>      CALL UPDATE_MASK  !ykchoi 07/23/2018
+559,560d516
+<      
+<      MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)   !ykchoi 07/24/2018
+617,620c573,574
+<      
+<      MASK = 1        !ykchoi 07/24/2018
+<      MASK9 = 1       !ykchoi 07/24/2018
+<      MASK_STRUC = 1  !ykchoi 07/24/2018
+---
+>      MASK = ZERO
+>      MASK9 = ZERO
+659,660d612
+<      REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
+< 
+694,720d645
+< !------- ykchoi 07/24/2018
+< !==============MASK
+< 	ALLOCATE( rMASKChild(1:Mloc,1:Nloc), rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+< 	
+< 	rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+< 	rMASKParent(1:mloc_grid1,1:nloc_grid1) = real( MASK_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
+< 	
+< 	CALL LINEAR_INTERP_INV( mloc_grid1,nloc_grid1,Mloc,Nloc,mbox1,nbox1, &
+< 		        isk,rMASKChild(1:Mloc,1:Nloc),rMASKParent(1:mloc_grid1,1:nloc_grid1),ng )
+< 
+< 	MASK_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) = INT( rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+< 	DEALLOCATE( rMASKChild, rMASKParent )
+< 
+< !==============MASK9
+< 	ALLOCATE( rMASKChild(1:Mloc,1:Nloc), rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+< 
+< 	rMASKChild(1:Mloc,1:Nloc) = real( MASK9_Tile(1:Mloc,1:Nloc,ng) )
+< 	rMASKParent(1:mloc_grid1,1:nloc_grid1) = real( MASK9_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
+< 
+< 	CALL LINEAR_INTERP_INV( mloc_grid1,nloc_grid1,Mloc,Nloc,mbox1,nbox1, &
+< 		        isk,rMASKChild(1:Mloc,1:Nloc),rMASKParent(1:mloc_grid1,1:nloc_grid1),ng )
+< 
+< 	MASK9_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) = INT( rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+< 	DEALLOCATE( rMASKChild, rMASKParent )
+< !------- ykchoi 07/24/2018
+< 
+< 
+742c667
+< ! ykchoi - temporary
+---
+> ! ykchoi - temporary 07/23/2018
+778,779d702
+< !	USE GLOBAL, ONLY : GridDimX, GridDimY, px, py, npx, npy,   &
+< !	                   ParentDomainID, myid, ProcessorID, ier
+781c704
+< 	                   myid, ProcessorID, ier
+---
+> 	                   ParentDomainID, myid, ProcessorID, ier

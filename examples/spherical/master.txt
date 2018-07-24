@@ -1,0 +1,13 @@
+94d93
+< 
+97c96,97
+< 	                   CALL TWOWAY_NESTING( Nsubgrid )					   
+---
+> 	                   CALL TWOWAY_NESTING( Nsubgrid )
+> 					   
+133,134c133,134
+<              CALL INDEX_LOCAL(Kgrid)  ! index back
+< 	       CALL LOAD_DATA(Kgrid)    ! ykchoi 0720 
+---
+>              CALL INDEX_LOCAL(Kgrid)  ! index back
+> 	       CALL LOAD_DATA(Kgrid)    ! ykchoi 0720

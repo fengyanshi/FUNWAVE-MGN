@@ -15,6 +15,7 @@ MODULE LOCAL
          REAL(SP),DIMENSION(:,:,:), ALLOCATABLE :: Depth_Tile, &
                  DepthX_Tile, DepthY_Tile
          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_Tile,MASK9_Tile
+         INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_STRUC_Tile       !ykchoi 07/24/2018
 # if defined(CARTESIAN)
 !   dont need latitude
 # else
@@ -61,6 +62,7 @@ SUBROUTINE ALLOCATE_VAR_TILE
        ALLOCATE ( DepthY_Tile(MaxDimX,MaxDimY1,NumGrid) )
        ALLOCATE ( MASK_Tile(MaxDimX,MaxDimY,NumGrid) )
        ALLOCATE ( MASK9_Tile(MaxDimX,MaxDimY,NumGrid) )
+       ALLOCATE ( MASK_STRUC_Tile(MaxDimX,MaxDimY,NumGrid) )     !ykchoi 07/24/2018
 # if defined(CARTESIAN)
 !   no latitude for cartesian
 # else
@@ -77,6 +79,7 @@ SUBROUTINE ALLOCATE_VAR_TILE
 ! initialization
         MASK_TILE = 1
         MASK9_TILE = 1
+        MASK_STRUC_TILE = 1   !ykchoi 07/24/2018
         U_TILE = ZERO
         V_TILE = ZERO
         Ubar_TILE = ZERO
