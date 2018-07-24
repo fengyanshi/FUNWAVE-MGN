@@ -1,0 +1,7 @@
+122,124c122,123
+< 			   NorthParentID(Mloc,Nghost,NumGrid)  )
+< 
+< !			   ParentDomainID(Mloc, Nloc, NumGrid)  )
+---
+> 			   NorthParentID(Mloc,Nghost,NumGrid), &
+> 			   ParentDomainID(Mloc, Nloc, NumGrid)  )

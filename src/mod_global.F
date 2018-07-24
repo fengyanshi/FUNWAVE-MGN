@@ -101,7 +101,7 @@ MODULE GLOBAL
 # if defined (PARALLEL)
        INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: &
             EastParentID, WestParentID, SouthParentID, NorthParentID
-       INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: ParentDomainID
+! 07/24/2018       INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: ParentDomainID
 # endif
 ! --------------
 

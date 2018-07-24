@@ -119,8 +119,9 @@ SUBROUTINE ALLOCATE_VARIABLES
 	 ALLOCATE( EastParentID(Nghost,Nloc,NumGrid), &
 			   WestParentID(Nghost,Nloc,NumGrid), &
 			   SouthParentID(Mloc,Nghost,NumGrid), &
-			   NorthParentID(Mloc,Nghost,NumGrid), &
-			   ParentDomainID(Mloc, Nloc, NumGrid)  )
+			   NorthParentID(Mloc,Nghost,NumGrid) )
+
+!  07/24/2018	   ParentDomainID(Mloc, Nloc, NumGrid)  )
 # endif
      ENDIF
 !========================================================

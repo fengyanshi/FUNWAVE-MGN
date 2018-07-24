@@ -1,0 +1,20 @@
+17,19c17
+<          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_Tile,MASK9_Tile
+<          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_STRUC_Tile       !ykchoi 07/24/2018
+< 
+---
+>          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_Tile,MASK9_Tile
+21c19
+< !   don't need latitude
+---
+> !   dont need latitude
+65,66c63
+<        ALLOCATE ( MASK9_Tile(MaxDimX,MaxDimY,NumGrid) )
+<        ALLOCATE ( MASK_STRUC_Tile(MaxDimX,MaxDimY,NumGrid) )     !ykchoi 07/24/2018
+---
+>        ALLOCATE ( MASK9_Tile(MaxDimX,MaxDimY,NumGrid) )
+82,83c79
+<         MASK9_TILE = 1
+<         MASK_STRUC_TILE = 1   !ykchoi 07/24/2018
+---
+>         MASK9_TILE = 1

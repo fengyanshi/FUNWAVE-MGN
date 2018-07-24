@@ -13,6 +13,8 @@ SUBROUTINE INITIAL_GRID(ng)
      REAL(SP) :: Dphi_r,Dtheta_r  !ykchoi
      INTEGER :: ParMloc, ParNloc, ParMloc1, ParNloc1  !ykchoi
 
+     REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
+
 # if defined (PARALLEL)
      INTEGER :: parent_area_i, parent_area_j
      INTEGER :: area_i, area_j
@@ -32,7 +34,8 @@ SUBROUTINE INITIAL_GRID(ng)
        DepthX_Tile(1:Mloc1,1:Nloc,ng) = DepthX(1:Mloc1,1:Nloc)
        DepthY_Tile(1:Mloc,1:Nloc1,ng) = DepthY(1:Mloc,1:Nloc1)
 
-       MASK_Tile(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
+       MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)  !ykchoi 07/24/2018
+	 MASK_Tile(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
        MASK9_Tile(1:Mloc,1:Nloc,ng) = MASK9(1:Mloc,1:Nloc)
        U_Tile(1:Mloc,1:Nloc,ng) = U(1:Mloc,1:Nloc)
        V_Tile(1:Mloc,1:Nloc,ng) = V(1:Mloc,1:Nloc)
@@ -40,7 +43,7 @@ SUBROUTINE INITIAL_GRID(ng)
        Vbar_Tile(1:Mloc,1:Nloc,ng) = Vbar(1:Mloc,1:Nloc)
        Eta_Tile(1:Mloc,1:Nloc,ng) = Eta(1:Mloc,1:Nloc)
 # if defined(CARTESIAN)
-!      We dont need latitude
+!      We don't need latitude
 # else
        Lat_Theta_Tile(1:Mloc,1:Nloc,ng) = Lat_Theta(1:Mloc,1:Nloc)
 # endif
@@ -64,7 +67,7 @@ SUBROUTINE INITIAL_GRID(ng)
 	 EastParentID(:,:,ng)=-99;   WestParentID(:,:,ng)=-99;
 	 SouthParentID(:,:,ng)=-99;  NorthParentID(:,:,ng)=-99;
 
-	 ParentDomainID(:,:,ng)=-99;
+	 !ParentDomainID(:,:,ng)=-99;
 
 	 parent_area_i = GridDimX( ng-1 )/px;
 	 parent_area_j = GridDimY( ng-1 )/py;
@@ -129,17 +132,17 @@ SUBROUTINE INITIAL_GRID(ng)
 	   ENDDO
 	 endif
 
-	 DO J=1,Nloc
-	    DO I=1,Mloc
-	       II = mbox1 + ( I-1+(Mloc-2*Nghost)*npx )/isk !actually npx=0 at west
-		   JJ = nbox1 + ( J-1+(Nloc-2*Nghost)*npy )/isk !actually npy=0 at south
+!	 DO J=1,Nloc
+!	    DO I=1,Mloc
+!	       II = mbox1 + ( I-1+(Mloc-2*Nghost)*npx )/isk !actually npx=0 at west
+!		   JJ = nbox1 + ( J-1+(Nloc-2*Nghost)*npy )/isk !actually npy=0 at south
 
-		   CALL FIND_PROCESSOR( parent_area_i, PX, II, &
-	                            parent_area_j, PY, JJ, area_i, area_j )
+!		   CALL FIND_PROCESSOR( parent_area_i, PX, II, &
+!	                            parent_area_j, PY, JJ, area_i, area_j )
 
-	       ParentDomainID(I,J,ng) = ProcessorID(area_i,area_j)
-	    ENDDO
-	 ENDDO
+!	       ParentDomainID(I,J,ng) = ProcessorID(area_i,area_j)
+!	    ENDDO
+!	 ENDDO
 # endif
 
 ! static
@@ -203,21 +206,49 @@ SUBROUTINE INITIAL_GRID(ng)
        CALL LINEAR_INTERP(ParMloc,ParNloc1,Mloc,Nloc1,mbox1,nbox1,isk, &
                   DepthY_Tile(1:ParMloc,1:ParNloc1,ng-1),DepthY_Tile(1:Mloc,1:Nloc1,ng),ng)
 
+!------------------------------------------------------------------
+!------------------------------------------------ ykchoi 07/24/2018
+! Young-Kwang Choi
+! In this version, the easiest way is applied to see propagation of water waves in water-land cells.
+!==============MASK_STRUC
+	 MASK_STRUC_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
+       ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
 
-! calculate MASK and MASK9 separately 
-       DO J=1,Nloc
-       DO I=1,Mloc
-        IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
-         MASK_Tile(I,J,ng)=0
-         Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
-        ELSE
-         MASK_Tile(I,J,ng)=1
-        ENDIF
-       ENDDO
-       ENDDO
+	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_STRUC_Tile(1:ParMloc,1:ParNloc,ng-1) )
+	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
 
-      !DO J=Jbeg-1,Jend+1
-      !DO I=Ibeg-1,Iend+1
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
+	 
+	 MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+	 DEALLOCATE( rMASKParent, rMASKChild )
+
+!==============MASK
+	 MASK_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
+       ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
+
+	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_Tile(1:ParMloc,1:ParNloc,ng-1) )
+	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
+       
+	 MASK_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+	 DEALLOCATE( rMASKParent, rMASKChild )
+	 
+       !DO J=1,Nloc
+       !DO I=1,Mloc
+       ! IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
+       !  MASK_Tile(I,J,ng)=0
+       !  Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
+       ! ELSE
+       !  MASK_Tile(I,J,ng)=1
+       ! ENDIF
+       !ENDDO
+       !ENDDO
+
+!==============MASK9
+	MASK9_Tile(:,:,ng) = 1  !1 - Boussinesq;  0 - SWE
 	DO J=2,Nloc-1  !ykchoi for nesting 0526
 	DO I=2,Mloc-1
       
@@ -230,6 +261,14 @@ SUBROUTINE INITIAL_GRID(ng)
 
       ENDDO
       ENDDO
+
+# if defined(PARALLEL)
+      CALL PHI_INT_EXCH( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+	CALL PHI_INT_EXCH( MASK_Tile(1:Mloc,1:Nloc,ng) )
+      CALL PHI_INT_EXCH( MASK9_Tile(1:Mloc,1:Nloc,ng) )
+# endif
+!------------------------------------------------ ykchoi 07/24/2018
+!------------------------------------------------------------------
 
 ! U
        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
@@ -390,6 +429,9 @@ SUBROUTINE LOAD_DATA(ng)
 
      U(1:Mloc,1:Nloc) = U_Tile(1:Mloc,1:Nloc,ng)
      V(1:Mloc,1:Nloc) = V_Tile(1:Mloc,1:Nloc,ng)
+
+     MASK_STRUC(1:Mloc,1:Nloc) = MASK_STRUC_Tile(1:Mloc,1:Nloc,ng)  !ykchoi 07/24/2018
+     
      MASK(1:Mloc,1:Nloc) = MASK_Tile(1:Mloc,1:Nloc,ng)
      MASK9(1:Mloc,1:Nloc) = MASK9_Tile(1:Mloc,1:Nloc,ng)
      Depth(1:Mloc,1:Nloc) = Depth_Tile(1:Mloc,1:Nloc,ng)
@@ -507,11 +549,15 @@ SUBROUTINE CALC_GRID(ng,NestStep,NestTotal)
 
      ENDDO
 
+     CALL UPDATE_MASK  !ykchoi 07/23/2018
+
 !==========================
 ! save for next time step
 !==========================
      MASK_TILE(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
      MASK9_TILE(1:Mloc,1:Nloc,ng) = MASK9(1:Mloc,1:Nloc)
+     
+     MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)   !ykchoi 07/24/2018
 
      U_TILE(1:Mloc,1:Nloc,ng) = U(1:Mloc,1:Nloc)
      V_TILE(1:Mloc,1:Nloc,ng) = V(1:Mloc,1:Nloc)
@@ -568,8 +614,10 @@ SUBROUTINE INITIALIZE_VARIABLES
 
      U = ZERO
      V = ZERO
-     MASK = ZERO
-     MASK9 = ZERO
+     
+     MASK = 1        !ykchoi 07/24/2018
+     MASK9 = 1       !ykchoi 07/24/2018
+     MASK_STRUC = 1  !ykchoi 07/24/2018
 	     
      Depth = ZERO
      DepthX = ZERO
@@ -608,6 +656,8 @@ SUBROUTINE TWOWAY_NESTING(ng)
      INTEGER :: mbox1,nbox1,isk
      INTEGER :: mloc_grid1, nloc_grid1
 
+     REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
+
 	isk=RATIO_SPACING(ng)
 	mbox1=MboxRef(ng)
 	nbox1=NboxRef(ng)
@@ -641,6 +691,33 @@ SUBROUTINE TWOWAY_NESTING(ng)
 	CALL LINEAR_INTERP_INV( mloc_grid1,nloc_grid1,Mloc,Nloc,mbox1,nbox1, &
 		        isk,Vbar_Tile(1:Mloc,1:Nloc,ng),Vbar_Tile(1:mloc_grid1,1:nloc_grid1,ng-1),ng )
 
+!------- ykchoi 07/24/2018
+!==============MASK
+	ALLOCATE( rMASKChild(1:Mloc,1:Nloc), rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+	
+	rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+	rMASKParent(1:mloc_grid1,1:nloc_grid1) = real( MASK_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
+	
+	CALL LINEAR_INTERP_INV( mloc_grid1,nloc_grid1,Mloc,Nloc,mbox1,nbox1, &
+		        isk,rMASKChild(1:Mloc,1:Nloc),rMASKParent(1:mloc_grid1,1:nloc_grid1),ng )
+
+	MASK_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) = INT( rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+	DEALLOCATE( rMASKChild, rMASKParent )
+
+!==============MASK9
+	ALLOCATE( rMASKChild(1:Mloc,1:Nloc), rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+
+	rMASKChild(1:Mloc,1:Nloc) = real( MASK9_Tile(1:Mloc,1:Nloc,ng) )
+	rMASKParent(1:mloc_grid1,1:nloc_grid1) = real( MASK9_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
+
+	CALL LINEAR_INTERP_INV( mloc_grid1,nloc_grid1,Mloc,Nloc,mbox1,nbox1, &
+		        isk,rMASKChild(1:Mloc,1:Nloc),rMASKParent(1:mloc_grid1,1:nloc_grid1),ng )
+
+	MASK9_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) = INT( rMASKParent(1:mloc_grid1,1:nloc_grid1) )
+	DEALLOCATE( rMASKChild, rMASKParent )
+!------- ykchoi 07/24/2018
+
+
 # if defined (PARALLEL)
 	!call phi_exch( Ubar_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
 	!call phi_exch( Vbar_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) )
@@ -662,28 +739,29 @@ SUBROUTINE TWOWAY_NESTING(ng)
 !		        isk,Vbar_Tile(1:Mloc,1:Nloc,ng),Vbar_Tile(:,:,ng-1),ng)
 
 ! calculate MASK and MASK9 separately
-      DO J=1,nloc_grid1
-      DO I=1,mloc_grid1
-        IF( Eta_Tile(I,J,ng-1) < -DEPTH_Tile(I,J,ng-1) ) THEN
-         MASK_Tile(I,J,ng-1)=0
-         Eta_Tile(I,J,ng-1)=MinDepth-Depth_Tile(I,J,ng-1)
-        ELSE
-         MASK_Tile(I,J,ng-1)=1
-        ENDIF
-      ENDDO
-      ENDDO
+! ykchoi - temporary
+!      DO J=1,nloc_grid1
+!      DO I=1,mloc_grid1
+!        IF( Eta_Tile(I,J,ng-1) < -DEPTH_Tile(I,J,ng-1) ) THEN
+!         MASK_Tile(I,J,ng-1)=0
+!         Eta_Tile(I,J,ng-1)=MinDepth-Depth_Tile(I,J,ng-1)
+!        ELSE
+!         MASK_Tile(I,J,ng-1)=1
+!        ENDIF
+!      ENDDO
+!      ENDDO
 
-      DO J=2,nloc_grid1-1
-      DO I=2,mloc_grid1-1
-        MASK9_Tile(I,J,ng-1)=MASK_Tile(I,J,ng-1)*MASK_Tile(I-1,J,ng-1)*MASK_Tile(I+1,J,ng-1)  &
-                *MASK_Tile(I+1,J+1,ng-1)*MASK_Tile(I,J+1,ng-1)*MASK_Tile(I-1,J+1,ng-1) &
-                *MASK_Tile(I+1,J-1,ng-1)*MASK_Tile(I,J-1,ng-1)*MASK_Tile(I-1,J-1,ng-1) 
-        IF(ABS(Eta_Tile(I,J,ng-1))/MAX(DEPTH_Tile(I,J,ng-1),MinDepthFrc)>SWE_ETA_DEP)THEN
-          MASK9_Tile(I,J,ng-1)=ZERO
-        ENDIF
+!      DO J=2,nloc_grid1-1
+!      DO I=2,mloc_grid1-1
+!        MASK9_Tile(I,J,ng-1)=MASK_Tile(I,J,ng-1)*MASK_Tile(I-1,J,ng-1)*MASK_Tile(I+1,J,ng-1)  &
+!                *MASK_Tile(I+1,J+1,ng-1)*MASK_Tile(I,J+1,ng-1)*MASK_Tile(I-1,J+1,ng-1) &
+!                *MASK_Tile(I+1,J-1,ng-1)*MASK_Tile(I,J-1,ng-1)*MASK_Tile(I-1,J-1,ng-1) 
+!        IF(ABS(Eta_Tile(I,J,ng-1))/MAX(DEPTH_Tile(I,J,ng-1),MinDepthFrc)>SWE_ETA_DEP)THEN
+!          MASK9_Tile(I,J,ng-1)=ZERO
+!        ENDIF
 
-      ENDDO
-      ENDDO
+!      ENDDO
+!      ENDDO
 
 ENDSUBROUTINE TWOWAY_NESTING
 
@@ -697,8 +775,10 @@ SUBROUTINE LINEAR_INTERP_INV(MaxM,MaxN,M,N,mb,nb,isk,Fin,Fout,ng)
 	USE GLOBAL, ONLY : Nghost
 
 # if defined (PARALLEL)
+!	USE GLOBAL, ONLY : GridDimX, GridDimY, px, py, npx, npy,   &
+!	                   ParentDomainID, myid, ProcessorID, ier
 	USE GLOBAL, ONLY : GridDimX, GridDimY, px, py, npx, npy,   &
-	                   ParentDomainID, myid, ProcessorID, ier
+	                   myid, ProcessorID, ier
 # endif
 
       IMPLICIT NONE
