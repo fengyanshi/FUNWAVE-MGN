@@ -37,6 +37,8 @@ SUBROUTINE INITIAL_GRID(ng)
        MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)  !ykchoi 07/24/2018
 	 MASK_Tile(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
        MASK9_Tile(1:Mloc,1:Nloc,ng) = MASK9(1:Mloc,1:Nloc)
+       CD_Tile(1:Mloc,1:Nloc,ng) = CD(1:Mloc,1:Nloc)                  !ykchoi 08/10/2018
+
        U_Tile(1:Mloc,1:Nloc,ng) = U(1:Mloc,1:Nloc)
        V_Tile(1:Mloc,1:Nloc,ng) = V(1:Mloc,1:Nloc)
        Ubar_Tile(1:Mloc,1:Nloc,ng) = Ubar(1:Mloc,1:Nloc)
@@ -197,14 +199,104 @@ SUBROUTINE INITIAL_GRID(ng)
 
 	 !call mpi_finalize(ier) !ykchoi test
 
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+	 IF( ADJUSTL(trim(DEPTH_TYPE_SUB(1:3))) == 'DAT' )THEN
+
+# if defined (PARALLEL)
+         call GetFileChild( ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))),Depth_Tile(1:Mloc,1:Nloc,ng) )
+
+         ! re-construct Depth
+         DO J=1,Nloc
+         DO I=2,Mloc
+            DepthX_Tile(I,J,ng)=0.5_SP*( Depth_Tile(I-1,J,ng) + Depth_Tile(I,J,ng) )
+         ENDDO
+         ENDDO
+         DO J=1,Nloc
+            DepthX_Tile(1,J,ng)=0.5_SP*(3.0_SP*Depth_Tile(1,J,ng)-Depth_Tile(2,J,ng))
+            DepthX_Tile(Mloc1,J,ng)=0.5_SP*(3.0_SP*Depth_Tile(Mloc,J,ng)-Depth_Tile(Mloc-1,J,ng))
+         ENDDO
+
+         DO J=2,Nloc
+         DO I=1,Mloc
+            DepthY_Tile(I,J,ng)=0.5_SP*(Depth_Tile(I,J-1,ng)+Depth_Tile(I,J,ng))
+         ENDDO
+         ENDDO
+         DO I=1,Mloc
+            DepthY_Tile(I,1,ng)=0.5_SP*(3.0_SP*Depth_Tile(I,1,ng)-Depth_Tile(I,2,ng))
+            DepthY_Tile(I,Nloc1,ng)=0.5_SP*(3.0_SP*Depth_Tile(I,Nloc,ng)-Depth_Tile(I,Nloc-1,ng))
+         ENDDO
+
+	   call phi_exch( DepthX_Tile(1:Mloc,1:Nloc,ng) )
+	   call phi_exch( DepthY_Tile(1:Mloc,1:Nloc,ng) )
+
+         ! For consistency with init.F
+	   DO J=1,Nloc
+         DO I=1,Mloc
+
+           Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
+	                          DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
+
+         ENDDO
+         ENDDO
+	   !  consider "waterlevel" later
+
+# else
+         OPEN( 1, FILE=ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))) )
+	   DO J=1,Nloc
+	      READ(1,*)( Depth_Tile(I,J,ng), I=1,Mloc )
+	   ENDDO
+         CLOSE(1)
+
+         ! re-construct Depth
+         DO J=1,Nloc
+         DO I=2,Mloc
+            DepthX_Tile(I,J,ng)=0.5_SP*( Depth_Tile(I-1,J,ng) + Depth_Tile(I,J,ng) )
+         ENDDO
+         ENDDO
+         DO J=1,Nloc
+            DepthX_Tile(1,J,ng)=0.5_SP*(3.0_SP*Depth_Tile(1,J,ng)-Depth_Tile(2,J,ng))
+            DepthX_Tile(Mloc1,J,ng)=0.5_SP*(3.0_SP*Depth_Tile(Mloc,J,ng)-Depth_Tile(Mloc-1,J,ng))
+         ENDDO
+
+         DO J=2,Nloc
+         DO I=1,Mloc
+            DepthY_Tile(I,J,ng)=0.5_SP*(Depth_Tile(I,J-1,ng)+Depth_Tile(I,J,ng))
+         ENDDO
+         ENDDO
+         DO I=1,Mloc
+            DepthY_Tile(I,1,ng)=0.5_SP*(3.0_SP*Depth_Tile(I,1,ng)-Depth_Tile(I,2,ng))
+            DepthY_Tile(I,Nloc1,ng)=0.5_SP*(3.0_SP*Depth_Tile(I,Nloc,ng)-Depth_Tile(I,Nloc-1,ng))
+         ENDDO
+
+         ! For consistency with init.F
+	   DO J=1,Nloc
+         DO I=1,Mloc
+
+           Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
+	                          DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
+
+         ENDDO
+         ENDDO
+	   !  consider "waterlevel" later
+
+# endif
+	 ELSE
+
+         CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
                   Depth_Tile(1:ParMloc,1:ParNloc,ng-1),Depth_Tile(1:Mloc,1:Nloc,ng),ng)
 
-       CALL LINEAR_INTERP(ParMloc1,ParNloc,Mloc1,Nloc,mbox1,nbox1,isk, &
+         CALL LINEAR_INTERP(ParMloc1,ParNloc,Mloc1,Nloc,mbox1,nbox1,isk, &
                   DepthX_Tile(1:ParMloc1,1:ParNloc,ng-1),DepthX_Tile(1:Mloc1,1:Nloc,ng),ng)
 
-       CALL LINEAR_INTERP(ParMloc,ParNloc1,Mloc,Nloc1,mbox1,nbox1,isk, &
+         CALL LINEAR_INTERP(ParMloc,ParNloc1,Mloc,Nloc1,mbox1,nbox1,isk, &
                   DepthY_Tile(1:ParMloc,1:ParNloc1,ng-1),DepthY_Tile(1:Mloc,1:Nloc1,ng),ng)
+	 ENDIF
+!======ykchoi 08/10/2018, 08/15/2018
+       IF(IN_Cd) THEN
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  CD_Tile(1:ParMloc,1:ParNloc,ng-1),CD_Tile(1:Mloc,1:Nloc,ng),ng)
+       ELSE
+	 CD_Tile(:,:,ng)=Cd_fixed
+       ENDIF	  
 
 !------------------------------------------------------------------
 !------------------------------------------------ ykchoi 07/24/2018
@@ -425,7 +517,9 @@ SUBROUTINE LOAD_DATA(ng)
 
      Eta(1:Mloc,1:Nloc) = Eta_Tile(1:Mloc,1:Nloc,ng)
      Ubar(1:Mloc,1:Nloc) = Ubar_Tile(1:Mloc,1:Nloc,ng)
-     Vbar(1:Mloc,1:Nloc) = Vbar_Tile(1:Mloc,1:Nloc,ng)  
+     Vbar(1:Mloc,1:Nloc) = Vbar_Tile(1:Mloc,1:Nloc,ng)
+     
+     CD(1:Mloc,1:Nloc) = CD_Tile(1:Mloc,1:Nloc,ng)    !ykchoi 08/10/2018
 
      U(1:Mloc,1:Nloc) = U_Tile(1:Mloc,1:Nloc,ng)
      V(1:Mloc,1:Nloc) = V_Tile(1:Mloc,1:Nloc,ng)
@@ -460,6 +554,8 @@ SUBROUTINE CALC_GRID(ng,NestStep,NestTotal)
      INTEGER, INTENT(IN) :: ng,NestStep,NestTotal
 
      INTEGER::ISTAGE
+
+! INTEGER :: mm1, nn1
 
 ! Consider later (ykchoi)
 ! # if defined (SAMPLES)
@@ -527,6 +623,31 @@ SUBROUTINE CALC_GRID(ng,NestStep,NestTotal)
 
         CALL WAVE_BREAKING
 
+! # if defined (FILTERING)
+! # if defined (CARTESIAN)
+!======================================================
+!====== Filtering process
+! To conduct Vincent and Briggs experiment
+! spherical mode?
+!        CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc))
+        !CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc))
+        !CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc))
+
+!        H=Eta*Gamma3+Depth
+
+!        DO J=Jbeg,Jend
+!        DO I=Ibeg,Iend   
+!	     IF(MASK(I,J)==1)THEN
+!		   HU(I,J)=Max(H(I,J),MinDepthFrc)*U(I,J)
+!		   HV(I,J)=Max(H(I,J),MinDepthFrc)*V(I,J)
+!	     ENDIF
+!        ENDDO
+!        ENDDO     
+!====== Filtering process
+!======================================================
+! # endif
+! # endif
+
         CALL EXCHANGE(ng)    !AMR routine
 
 # if defined (COUPLING)
@@ -548,6 +669,31 @@ SUBROUTINE CALC_GRID(ng,NestStep,NestTotal)
         ENDIF
 
      ENDDO
+
+! # if defined (FILTERING)
+! # if defined (CARTESIAN)
+!======================================================
+!====== Filtering process
+! spherical mode?
+!        CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc))
+        !CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc))
+        !CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc))
+
+!        H=Eta*Gamma3+Depth
+
+!        DO J=Jbeg,Jend
+!        DO I=Ibeg,Iend   
+!	     IF(MASK(I,J)==1)THEN
+!		   HU(I,J)=Max(H(I,J),MinDepthFrc)*U(I,J)
+!		   HV(I,J)=Max(H(I,J),MinDepthFrc)*V(I,J)
+!	     ENDIF
+!        ENDDO
+!        ENDDO
+!	  CALL EXCHANGE(ng)    !AMR routine
+!====== Filtering process
+!======================================================
+! # endif
+! # endif     
 
      CALL UPDATE_MASK  !ykchoi 07/23/2018
 
@@ -611,6 +757,8 @@ SUBROUTINE INITIALIZE_VARIABLES
      Eta = ZERO
      Ubar = ZERO
      Vbar = ZERO
+
+     CD = ZERO       !ykchoi 08/10/2018
 
      U = ZERO
      V = ZERO

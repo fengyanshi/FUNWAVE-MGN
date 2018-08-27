@@ -14,10 +14,12 @@ MODULE LOCAL
 ! bathy
          REAL(SP),DIMENSION(:,:,:), ALLOCATABLE :: Depth_Tile, &
                  DepthX_Tile, DepthY_Tile
+         REAL(SP),DIMENSION(:,:,:),ALLOCATABLE :: CD_Tile             !ykchoi 08/10/2018                 
          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_Tile,MASK9_Tile
          INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: MASK_STRUC_Tile       !ykchoi 07/24/2018
+
 # if defined(CARTESIAN)
-!   dont need latitude
+!   don't need latitude
 # else
          REAL(SP),DIMENSION(:,:,:),ALLOCATABLE :: Lat_Theta_Tile
 # endif
@@ -63,6 +65,7 @@ SUBROUTINE ALLOCATE_VAR_TILE
        ALLOCATE ( MASK_Tile(MaxDimX,MaxDimY,NumGrid) )
        ALLOCATE ( MASK9_Tile(MaxDimX,MaxDimY,NumGrid) )
        ALLOCATE ( MASK_STRUC_Tile(MaxDimX,MaxDimY,NumGrid) )     !ykchoi 07/24/2018
+       ALLOCATE ( CD_Tile(MaxDimX,MaxDimY,NumGrid) )             !ykchoi 08/10/2018
 # if defined(CARTESIAN)
 !   no latitude for cartesian
 # else
@@ -85,6 +88,7 @@ SUBROUTINE ALLOCATE_VAR_TILE
         Ubar_TILE = ZERO
         Vbar_TILE = ZERO
         Eta_TILE = ZERO
+        CD_TILE = ZERO        !ykchoi 08/10/2018
 
 END SUBROUTINE ALLOCATE_VAR_TILE
 

@@ -223,7 +223,8 @@ SUBROUTINE READ_INPUT
 
       ALLOCATE( GridDimX(NumGrid),GridDimY(NumGrid),  &
 	          RATIO_SPACING(NumGrid),TOTALRATIO_SPACING(NumGrid),  &
-                MboxRef(NumGrid),NboxRef(NumGrid),IsPrint(NumGrid) )
+                MboxRef(NumGrid),NboxRef(NumGrid),IsPrint(NumGrid),  &
+			  DEPTH_FILE_SUB(NumGrid) )
 
       DO K=1,NumGrid
         GridDimX(K)=Mglob
@@ -259,6 +260,27 @@ SUBROUTINE READ_INPUT
 	     MboxRef(K+1)=itmp4
 		 NboxRef(K+1)=itmp5
           ENDDO
+
+          READ(2,*)
+          READ(2,*) DEPTH_TYPE_SUB
+	    !if (myid.eq.0) WRITE(*,*) ADJUSTL( trim( DEPTH_TYPE_SUB ) )
+
+		IF( ADJUSTL(trim(DEPTH_TYPE_SUB(1:3))) == 'DAT' )THEN
+	      !if (myid.eq.0) WRITE(*,*) ADJUSTL( trim(DEPTH_TYPE_SUB(1:3)) )
+
+		  DO K=2,NumGrid
+             READ(2,*) DEPTH_FILE_SUB(K)
+# if defined (PARALLEL)	       
+		   if (myid.eq.0) then
+		      WRITE(*,*) "Depth in Subgrid :",ADJUSTL( TRIM( DEPTH_FILE_SUB(K) ) )
+		      WRITE(3,*) "Depth in Subgrid :",ADJUSTL( TRIM( DEPTH_FILE_SUB(K) ) )
+	       endif
+# else
+	       WRITE(*,*) "Depth in Subgrid :",ADJUSTL( TRIM( DEPTH_FILE_SUB(K) ) )
+	       WRITE(3,*) "Depth in Subgrid :",ADJUSTL( TRIM( DEPTH_FILE_SUB(K) ) )
+# endif
+		  ENDDO
+		ENDIF
         CLOSE(2)
 
       ENDIF ! end numgrid>1
@@ -1035,7 +1057,7 @@ SUBROUTINE READ_INPUT
 # endif
 
 	!For AMR routine 
-      IF(NumGrid.GT.1)THEN
+      IF(NumGrid.GE.1)THEN   !ykchoi 07/30/2018
         DO K=1,NumGrid
            itmp1=mod(k/10,10)
            itmp2=mod(k,10)
@@ -1783,3 +1805,54 @@ END SUBROUTINE PutFile
 
 # endif
 
+# if defined (PARALLEL)
+!-------------------------------------------------------------------------------------
+SUBROUTINE GetFileChild (FILE,PHI)
+     USE GLOBAL
+     IMPLICIT NONE
+
+     INTEGER :: l
+     ! could be max. procs
+     INTEGER,DIMENSION(NumberProcessor) :: npxs,npys
+     REAL(SP),DIMENSION(NumberProcessor) :: xx
+     REAL(SP),DIMENSION(MGlob+2*Nghost,NGlob+2*Nghost) :: PHIGLOB
+     CHARACTER(LEN=80) FILE
+     REAL(SP),DIMENSION(Mloc,Nloc),INTENT(OUT) :: PHI
+
+! TEMP
+
+     if (myid.eq.0) then
+        OPEN(1,FILE=TRIM(FILE))
+        DO J=1,NGlob+2*NGhost
+           READ(1,*)(PHIGLOB(I,J),I=1,MGlob+2*Nghost)
+        ENDDO
+        CLOSE(1)
+	  
+	  !OPEN(10000,FILE='tmp1000.out')
+        !DO J=1,NGlob+NGhost
+        !   write(10000,'(5000E16.6)')(PHIGLOB(I,J),I=1,MGlob+Nghost)
+        !ENDDO
+        !CLOSE(10000)
+	  !call mpi_finalize(ier)
+     endif
+
+     call MPI_Gather(npx,1,MPI_INTEGER,npxs,1,MPI_INTEGER,&
+          0,MPI_COMM_WORLD,ier)
+     call MPI_Gather(npy,1,MPI_INTEGER,npys,1,MPI_INTEGER,&
+          0,MPI_COMM_WORLD,ier)
+
+     do i=1,Mloc
+     do j=1,Nloc
+        if (myid.eq.0) then
+           do l=1,px*py
+              xx(l) = PHIGLOB(i+npxs(l)*(Iend-Ibeg+1),&
+                   j+npys(l)*(Jend-Jbeg+1))
+           enddo
+        endif
+        call MPI_Scatter(xx,1,MPI_SP,&
+             PHI(i,j),1,MPI_SP,0,MPI_COMM_WORLD,ier)
+     enddo
+     enddo
+
+END SUBROUTINE GetFileChild
+# endif

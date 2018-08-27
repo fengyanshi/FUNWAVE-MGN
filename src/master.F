@@ -68,7 +68,7 @@ PROGRAM MASTER
            DO Ksubgrid_internal=1,NumInternal
 
               ! subgrid (initial)
-			IF(Ksubgrid_internal == NumInternal)THEN   !addition
+			IF(Ksubgrid_internal == 1)THEN   !addition
                 IF(Kgrid.LT.NumGrid)THEN
 !                  IF(START_GRID(Kgrid+1))THEN
 	            
@@ -91,10 +91,10 @@ PROGRAM MASTER
 	              IF(Kgrid == NumGrid) THEN
 
 	                DO Nsubgrid=NumGrid,2,-1
+
 	                   CALL INDEX_LOCAL( Nsubgrid )
 	                   CALL LOAD_DATA( Nsubgrid )
-	                   CALL TWOWAY_NESTING( Nsubgrid )
-					   
+	                   CALL TWOWAY_NESTING( Nsubgrid )					   
 					    
 	                ENDDO
 
@@ -131,7 +131,7 @@ PROGRAM MASTER
 
            IF(IsPrint(Kgrid))THEN
              CALL INDEX_LOCAL(Kgrid)  ! index back
-	       CALL LOAD_DATA(Kgrid)    ! ykchoi 0720
+	       CALL LOAD_DATA(Kgrid)    ! ykchoi 0720 
 		   CALL PREVIEW_AMR(Kgrid)
              IsPrint(Kgrid)=.FALSE.
            ENDIF

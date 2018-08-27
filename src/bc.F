@@ -481,38 +481,38 @@ SUBROUTINE EXCHANGE(ng)
     HU=HU*MASK
     HV=HV*MASK
 
-# if defined (FILTERING)
-     filter_count = filter_count + 1 
-# if defined (CARTESIAN)
-     IF (filter_count > filter_interval) THEN
-       filter_count =0
+! # if defined (FILTERING)
+!     filter_count = filter_count + 1 
+! # if defined (CARTESIAN)
+!     IF (filter_count > filter_interval) THEN
+!       filter_count =0
 
-       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc))
+!       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc))
 
-       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc))
-       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc))
+!       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc))
+!       CALL SHAPIRO_3(Mloc,Nloc,Nghost,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc))
 
-    VTYPE=1
-    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,Eta(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
-    VTYPE=2
-    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,U(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
-    VTYPE=3
-    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,V(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
+!    VTYPE=1
+!    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,Eta(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
+!    VTYPE=2
+!    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,U(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
+!    VTYPE=3
+!    CALL PHI_COLL(Mloc,Nloc,Ibeg,Iend,Jbeg,Jend,Nghost,V(1:Mloc,1:Nloc),VTYPE,PERIODIC,ng)
 
-    H=Eta*Gamma3+Depth
+!    H=Eta*Gamma3+Depth
 
-     DO J=Jbeg,Jend
-     DO I=Ibeg,Iend   
-       IF(MASK(I,J)==1)THEN
-        HU(I,J)=Max(H(I,J),MinDepthFrc)*U(I,J)
-        HV(I,J)=Max(H(I,J),MinDepthFrc)*V(I,J)
-       ENDIF
-     ENDDO
-     ENDDO
+!     DO J=Jbeg,Jend
+!     DO I=Ibeg,Iend   
+!       IF(MASK(I,J)==1)THEN
+!        HU(I,J)=Max(H(I,J),MinDepthFrc)*U(I,J)
+!        HV(I,J)=Max(H(I,J),MinDepthFrc)*V(I,J)
+!       ENDIF
+!     ENDDO
+!     ENDDO
 
-     ENDIF ! end filter_count
-# endif
-# endif
+!     ENDIF ! end filter_count
+! # endif
+! # endif
     
 END SUBROUTINE EXCHANGE
 

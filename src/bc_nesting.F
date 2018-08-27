@@ -508,24 +508,27 @@ SUBROUTINE USE_NESTING_BC(istep,ratio,ng)
 
         bdry1 = Z_NESTING_WEST_PAR(J,I,2)*tmpA1  &
 	         +Z_NESTING_WEST_PAR(J,I,1)*tmpA2
-        bdry2 = Z_NESTING_WEST_PAR(J,I,2)*tmpB1  &
-	         +Z_NESTING_WEST_PAR(J,I,1)*tmpB2
-        ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = Z_NESTING_WEST_PAR(J,I,2)*tmpB1  &
+	  !       +Z_NESTING_WEST_PAR(J,I,1)*tmpB2
+        ETA(I,J) = bdry1
+        !ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
 	  
         bdry1 = U_NESTING_WEST_PAR(J,I,2)*tmpA1  &
 	         +U_NESTING_WEST_PAR(J,I,1)*tmpA2
-        bdry2 = U_NESTING_WEST_PAR(J,I,2)*tmpB1  &
-	         +U_NESTING_WEST_PAR(J,I,1)*tmpB2
-        U(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = U_NESTING_WEST_PAR(J,I,2)*tmpB1  &
+	  !       +U_NESTING_WEST_PAR(J,I,1)*tmpB2
+        U(I,J) = bdry1
+        !U(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
         bdry1 = V_NESTING_WEST_PAR(J,I,2)*tmpA1  &
 	         +V_NESTING_WEST_PAR(J,I,1)*tmpA2
-        bdry2 = V_NESTING_WEST_PAR(J,I,2)*tmpB1  &
-	         +V_NESTING_WEST_PAR(J,I,1)*tmpB2
-        V(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = V_NESTING_WEST_PAR(J,I,2)*tmpB1  &
+	  !       +V_NESTING_WEST_PAR(J,I,1)*tmpB2
+        V(I,J) = bdry1
+        !V(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
-        HU(I,J)=(Depth(I,J)+ETA(I,J))*U(I,J)
-        HV(I,J)=(Depth(I,J)+ETA(I,J))*V(I,J)
+        HU(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*U(I,J)
+        HV(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*V(I,J)
       ENDDO
       ENDDO
 
@@ -553,24 +556,27 @@ SUBROUTINE USE_NESTING_BC(istep,ratio,ng)
 
         bdry1 = Z_NESTING_EAST_PAR(J,I-Iend,2)*tmpA1  &
 	         +Z_NESTING_EAST_PAR(J,I-Iend,1)*tmpA2
-        bdry2 = Z_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
-	         +Z_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
-        ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = Z_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
+	  !       +Z_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
+        ETA(I,J) = bdry1
+        !ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
 	  
         bdry1 = U_NESTING_EAST_PAR(J,I-Iend,2)*tmpA1  &
 	         +U_NESTING_EAST_PAR(J,I-Iend,1)*tmpA2
-        bdry2 = U_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
-	         +U_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
-        U(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = U_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
+	  !       +U_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
+        U(I,J) = bdry1
+        !U(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
         bdry1 = V_NESTING_EAST_PAR(J,I-Iend,2)*tmpA1  &
 	         +V_NESTING_EAST_PAR(J,I-Iend,1)*tmpA2
-        bdry2 = V_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
-	         +V_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
-        V(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = V_NESTING_EAST_PAR(J,I-Iend,2)*tmpB1  &
+	  !       +V_NESTING_EAST_PAR(J,I-Iend,1)*tmpB2
+        V(I,J) = bdry1
+        !V(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
-        HU(I,J)=(Depth(I,J)+ETA(I,J))*U(I,J)
-        HV(I,J)=(Depth(I,J)+ETA(I,J))*V(I,J)
+        HU(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*U(I,J)
+        HV(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*V(I,J)
       ENDDO
       ENDDO
 
@@ -597,24 +603,27 @@ SUBROUTINE USE_NESTING_BC(istep,ratio,ng)
 
         bdry1 = Z_NESTING_SOUTH_PAR(I,J,2)*tmpA1  &
 	         +Z_NESTING_SOUTH_PAR(I,J,1)*tmpA2
-        bdry2 = Z_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
-	         +Z_NESTING_SOUTH_PAR(I,J,1)*tmpB2
-        ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = Z_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
+	  !       +Z_NESTING_SOUTH_PAR(I,J,1)*tmpB2
+        ETA(I,J) = bdry1
+        !ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
 	  
         bdry1 = U_NESTING_SOUTH_PAR(I,J,2)*tmpA1  &
 	         +U_NESTING_SOUTH_PAR(I,J,1)*tmpA2
-        bdry2 = U_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
-	         +U_NESTING_SOUTH_PAR(I,J,1)*tmpB2
-        U(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = U_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
+	  !       +U_NESTING_SOUTH_PAR(I,J,1)*tmpB2
+        U(I,J) = bdry1
+        !U(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
         bdry1 = V_NESTING_SOUTH_PAR(I,J,2)*tmpA1  &
 	         +V_NESTING_SOUTH_PAR(I,J,1)*tmpA2
-        bdry2 = V_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
-	         +V_NESTING_SOUTH_PAR(I,J,1)*tmpB2
-        V(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = V_NESTING_SOUTH_PAR(I,J,2)*tmpB1  &
+	  !       +V_NESTING_SOUTH_PAR(I,J,1)*tmpB2
+        V(I,J) = bdry1
+        !V(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
-        HU(I,J)=(Depth(I,J)+ETA(I,J))*U(I,J)
-        HV(I,J)=(Depth(I,J)+ETA(I,J))*V(I,J)
+        HU(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*U(I,J)
+        HV(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*V(I,J)
       ENDDO
       ENDDO 
 
@@ -641,24 +650,27 @@ SUBROUTINE USE_NESTING_BC(istep,ratio,ng)
 
         bdry1 = Z_NESTING_NORTH_PAR(I,J-Jend,2)*tmpA1  &
 	         +Z_NESTING_NORTH_PAR(I,J-Jend,1)*tmpA2
-        bdry2 = Z_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
-	         +Z_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
-        ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = Z_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
+	  !       +Z_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
+        ETA(I,J) = bdry1
+        !ETA(I,J) = 0.5_SP*( bdry1 + bdry2 )
 	  
         bdry1 = U_NESTING_NORTH_PAR(I,J-Jend,2)*tmpA1  &
 	         +U_NESTING_NORTH_PAR(I,J-Jend,1)*tmpA2
-        bdry2 = U_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
-	         +U_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
-        U(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = U_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
+	  !       +U_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
+        U(I,J) = bdry1
+        !U(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
         bdry1 = V_NESTING_NORTH_PAR(I,J-Jend,2)*tmpA1  &
 	         +V_NESTING_NORTH_PAR(I,J-Jend,1)*tmpA2
-        bdry2 = V_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
-	         +V_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
-        V(I,J) = 0.5_SP*( bdry1 + bdry2 )
+        !bdry2 = V_NESTING_NORTH_PAR(I,J-Jend,2)*tmpB1  &
+	  !       +V_NESTING_NORTH_PAR(I,J-Jend,1)*tmpB2
+        V(I,J) = bdry1
+        !V(I,J) = 0.5_SP*( bdry1 + bdry2 )
 
-        HU(I,J)=(Depth(I,J)+ETA(I,J))*U(I,J)
-        HV(I,J)=(Depth(I,J)+ETA(I,J))*V(I,J)
+        HU(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*U(I,J)
+        HV(I,J)=Max( Depth(I,J)+ETA(I,J)*Gamma3,MinDepthFrc )*V(I,J)
       ENDDO
       ENDDO 
 

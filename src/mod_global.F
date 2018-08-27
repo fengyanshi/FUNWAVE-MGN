@@ -101,8 +101,11 @@ MODULE GLOBAL
 # if defined (PARALLEL)
        INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: &
             EastParentID, WestParentID, SouthParentID, NorthParentID
-! 07/24/2018       INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: ParentDomainID
+       !INTEGER,DIMENSION(:,:,:),ALLOCATABLE :: ParentDomainID
 # endif
+
+       CHARACTER(LEN=80) :: DEPTH_TYPE_SUB
+       CHARACTER(LEN=80),DIMENSION(:),ALLOCATABLE :: DEPTH_FILE_SUB
 ! --------------
 
 ! timer
