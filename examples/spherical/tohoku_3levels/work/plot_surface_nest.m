@@ -1,11 +1,16 @@
 clear all
-fdir='../result/';
+fdir='/Users/fengyanshi15/tmp1/';
 Nghost=4;
-totalres=48;
+totalres=60;
 timelag=3600;
-dep=load('../depth_30min.txt');
+dep=load('../external_files/depth_30min.txt');
 
-grid=load(['../subgrid_info.txt']);
+% Set up file and options for creating the movie
+vidObj = VideoWriter('movie.avi');  % Set filename to write video file
+vidObj.FrameRate=10;  % Define the playback framerate [frames/sec]
+open(vidObj);
+
+grid=load(['subgrid_info.txt']);
 
 [n1,m1]=size(dep);
 dx1=0.5;
@@ -110,9 +115,18 @@ set(gcf,'Renderer','zbuffer');
 
 axis equal; axis tight;
 
+pause(0.1)
+
+    currframe=getframe(gcf);
+    writeVideo(vidObj,currframe);  % Get each recorded frame and write it to filename defined above
+
+
+
 pname = ['surf_',num2str(num),'.png'];
 set(gcf,'PaperPositionMode', 'auto');
-print ('-dpng', pname);
+%print ('-dpng', pname);
 
 end
+
+close(vidObj)
 %print -djpeg eta_inlet_shoal_irr.jpg
