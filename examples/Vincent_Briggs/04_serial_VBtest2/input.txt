@@ -34,7 +34,7 @@ Xslp = 10.0
   ! -------------------PRINT---------------------------------
   ! PRINT*,
   ! result folder
-RESULT_FOLDER = /Users/fengyanshi15/tmp1/
+RESULT_FOLDER = output/
 
   ! ------------------DIMENSION-----------------------------
   ! global grid dimension
@@ -45,7 +45,7 @@ Nglob = 126
   ! time: total computational time/ plot time / screen interval 
   ! all in seconds
 TOTAL_TIME = 70.0
-PLOT_INTV = 1.0
+PLOT_INTV = 0.1
 PLOT_INTV_STATION = 5000.0
 SCREEN_INTV = 1.0
 HOTSTART_INTV = 360000000000.0

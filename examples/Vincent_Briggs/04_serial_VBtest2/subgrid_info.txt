@@ -1,3 +1,7 @@
 % GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
 135  162  2  55  25
+<<<<<<< HEAD
 245  174  2  10  40
+=======
+245  174  2  10  40
+>>>>>>> ecf41a14b91ec75fbf4d00ea527f9aec07c43b15
