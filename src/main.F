@@ -202,7 +202,7 @@ SUBROUTINE INITIAL_GRID(ng)
 	 IF( ADJUSTL(trim(DEPTH_TYPE_SUB(1:3))) == 'DAT' )THEN
 
 # if defined (PARALLEL)
-         call GetFileChild( ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))),Depth_Tile(1:Mloc,1:Nloc,ng) )
+         call GetFileChild(DEPTH_FILE_SUB(ng),Depth_Tile(1:Mloc,1:Nloc,ng) )
 
          ! re-construct Depth
          DO J=1,Nloc
