@@ -1,0 +1,7 @@
+% GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
+170   123   2   29  5
+300   141   2   6   29
+%Depth in Subgrid (DATA or NONE)
+DATA
+dep_sub1_ny131mx178.dat
+dep_sub2_ny149mx308.dat

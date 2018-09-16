@@ -1,0 +1,15 @@
+62a63,64
+>            !NumInternal=RATIO_SPACING(Kgrid)
+>            !IF(Kgrid.GT.1) DT=DT_grid1/RATIO_SPACING(Kgrid)		 
+70a73
+> !                  IF(START_GRID(Kgrid+1))THEN
+74a78
+> !                  ENDIF
+80a85
+> !              IF(START_GRID(Kgrid))THEN                
+98a104
+> !              ENDIF
+102a109
+> !                  IF(START_GRID(Kgrid+1))THEN
+106a114
+> !                  ENDIF

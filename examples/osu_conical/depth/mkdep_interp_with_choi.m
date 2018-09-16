@@ -1,0 +1,153 @@
+clear all; clc; close all;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dx=0.1;   
+dx_par=0.4;  nghost=4;
+mglob1=170;  nglob1=123;  mb1=29;  nb1=5;   mb1dx1=0.2;
+mglob2=300;  nglob2=141;  mb2=6;   nb2=29;  mb2dx2=0.1;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dep1=load('depth_analytical.txt');
+dx1=0.1752;
+dy1=0.2128;
+[n1, m1]=size(dep1);
+
+x1=[0:m1-1]*dx1;
+y1=[0:n1-1]*dy1-0.15;
+[X1, Y1]=meshgrid(x1,y1);
+
+% dx=0.1;
+
+x=[0:dx:45]';
+y=[0:dx:26]';
+x2=[0:dx:45];
+y2=[0:dx:26];
+[X Y]=meshgrid(x2,y2);
+
+dep2=dep1;
+
+nx=length(x);
+ny=length(y);
+h=zeros(ny,nx);
+
+y2=y2-13;
+dep3=dep2;
+
+% extend
+dep4=zeros(ny,nx+50);
+dep4(1:ny,1:50)=0.78;
+dep4(1:ny,51:nx+50)=dep3(:,:);
+
+save -ASCII depth_wkshop.txt dep4
+clear dep1 dep2 dep3 x* y* X* Y* dx1 dy1 nx ny n1 m1 h
+%-----------------------------------------------------------
+%%% dx=0.4 grid
+[n4, m4]=size(dep4);
+x4=[0:m4-1]*dx;
+y4=[0:n4-1]*dx;
+[X4,Y4]=meshgrid(x4,y4);
+
+dx5=dx_par;
+x5=0 : dx5 : x4(end);
+y5=0 : dx5 : y4(end);
+[X5,Y5]=meshgrid(x5,y5);
+dep5=griddata(X4,Y4,dep4,X5,Y5);
+
+dep6=dep5(:,1:125);
+% dep6=dep5;
+fname=[ 'OSUdep_ny',num2str( size(dep6,1) ),'mx',num2str( size(dep6,2) ),'.dat' ]
+[FileID]=fopen( fname, 'wt' );
+%for line=size(dep6,1):-1:1;
+for line=1:1:size(dep6,1);
+    fprintf( FileID, '%10.5f  ', dep6(line,:) );
+    fprintf( FileID,'\n');
+end; clear FileID
+fclose all;
+clear n4 m4 x* y* X* Y* dep5 ans fname line dx5
+%-----------------------------------------------------------
+
+%%% dx=0.2 grid
+[n4, m4]=size(dep4);
+x4=[0:m4-1]*dx;
+y4=[0:n4-1]*dx;
+[X4,Y4]=meshgrid(x4,y4);
+
+dx7=mb1dx1;
+x7=0 : dx7 : x4(end);
+y7=0 : dx7 : y4(end);
+[X7,Y7]=meshgrid(x7,y7);
+dep7=griddata(X4,Y4,dep4,X7,Y7);
+
+stx1=(mb1-nghost-1)*dx_par + nghost*mb1dx1;
+sty1=(nb1-nghost-1)*dx_par + nghost*mb1dx1;
+
+tmp=abs( stx1-x7 );
+indx=find( min(tmp) == tmp );  clear tmp
+
+tmp=abs( sty1-y7 );
+indy=find( min(tmp) == tmp );  clear tmp
+
+stax1=indx-nghost;   endx1=indx+(mglob1-1)+nghost;
+stay1=indy-nghost;   endy1=indy+(nglob1-1)+nghost;
+
+dep7_sub=dep7(stay1:endy1,stax1:endx1);
+fname=[ 'dep_sub1_ny',num2str( size(dep7_sub,1) ),'mx',num2str( size(dep7_sub,2) ),'.dat' ]
+[FileID]=fopen( fname, 'wt' );
+for line=1:1:size(dep7_sub,1);
+    fprintf( FileID, '%10.5f  ', dep7_sub(line,:) );
+    fprintf( FileID,'\n');
+end; clear FileID
+fclose all;
+
+%-----------------------------------------------------------
+clear n4 m4 X4 Y4 dx7 x7 y7 X7 Y7 dep7* stx1 sty1 x4 y4
+clear stax1  endx1  stay1  endy1  indx  indy  fname  ans  dep7_sub  line
+
+%%% dx=0.1 grid
+[n4, m4]=size(dep4);
+x4=[0:m4-1]*dx;
+y4=[0:n4-1]*dx;
+[X4,Y4]=meshgrid(x4,y4);
+
+dx7=mb2dx2;
+x7=0 : dx7 : x4(end);
+y7=0 : dx7 : y4(end);
+[X7,Y7]=meshgrid(x7,y7);
+dep7=griddata(X4,Y4,dep4,X7,Y7);
+
+%----------
+x1 = 0 : mb1dx1 : (mglob1-1)*mb1dx1;
+y1 = 0 : mb1dx1 : (nglob1-1)*mb1dx1;
+
+x1 = x1 + (mb1-nghost-1)*dx_par + nghost*mb1dx1;
+y1 = y1 + (nb1-nghost-1)*dx_par + nghost*mb1dx1;
+%----------
+
+%----------
+x2 = 0 : mb2dx2 : (mglob2-1)*mb2dx2;
+y2 = 0 : mb2dx2 : (nglob2-1)*mb2dx2;
+
+x2 = x2 + min(x1) + (mb2-nghost-1)*mb1dx1 + nghost*mb2dx2;
+y2 = y2 + min(y1) + (nb2-nghost-1)*mb1dx1 + nghost*mb2dx2;
+
+stx1=x2(1);
+sty1=y2(1);
+%----------
+
+tmp=abs( stx1-x7 );
+indx=find( min(tmp) == tmp );  clear tmp
+
+tmp=abs( sty1-y7 );
+indy=find( min(tmp) == tmp );  clear tmp
+
+stax1=indx-nghost;   endx1=indx+(mglob2-1)+nghost;
+stay1=indy-nghost;   endy1=indy+(nglob2-1)+nghost;
+
+dep7_sub=dep7(stay1:endy1,stax1:endx1);
+fname=[ 'dep_sub2_ny',num2str( size(dep7_sub,1) ),'mx',num2str( size(dep7_sub,2) ),'.dat' ]
+[FileID]=fopen( fname, 'wt' );
+for line=1:1:size(dep7_sub,1);
+    fprintf( FileID, '%10.5f  ', dep7_sub(line,:) );
+    fprintf( FileID,'\n');
+end; clear FileID
+fclose all;
