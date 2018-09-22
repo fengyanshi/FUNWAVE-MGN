@@ -48,6 +48,9 @@ SUBROUTINE INITIAL_GRID(ng)
 !      We don't need latitude
 # else
        Lat_Theta_Tile(1:Mloc,1:Nloc,ng) = Lat_Theta(1:Mloc,1:Nloc)
+	 Coriolis_Tile(1:Mloc,1:Nloc,ng) = Coriolis(1:Mloc,1:Nloc)
+	 SlopeX_Tile(1:Mloc,1:Nloc,ng) = SlopeX(1:Mloc,1:Nloc)           !ykchoi 09/11/2018
+	 SlopeY_Tile(1:Mloc,1:Nloc,ng) = SlopeY(1:Mloc,1:Nloc)           !ykchoi 09/11/2018
 # endif
 
      ELSE
@@ -65,11 +68,8 @@ SUBROUTINE INITIAL_GRID(ng)
        nbox1=NboxRef(ng)
 
 # if defined (PARALLEL)
-! ykchoi delete 0522
 	 EastParentID(:,:,ng)=-99;   WestParentID(:,:,ng)=-99;
 	 SouthParentID(:,:,ng)=-99;  NorthParentID(:,:,ng)=-99;
-
-	 !ParentDomainID(:,:,ng)=-99;
 
 	 parent_area_i = GridDimX( ng-1 )/px;
 	 parent_area_j = GridDimY( ng-1 )/py;
@@ -133,51 +133,9 @@ SUBROUTINE INITIAL_GRID(ng)
 	      ENDDO
 	   ENDDO
 	 endif
-
-!	 DO J=1,Nloc
-!	    DO I=1,Mloc
-!	       II = mbox1 + ( I-1+(Mloc-2*Nghost)*npx )/isk !actually npx=0 at west
-!		   JJ = nbox1 + ( J-1+(Nloc-2*Nghost)*npy )/isk !actually npy=0 at south
-
-!		   CALL FIND_PROCESSOR( parent_area_i, PX, II, &
-!	                            parent_area_j, PY, JJ, area_i, area_j )
-
-!	       ParentDomainID(I,J,ng) = ProcessorID(area_i,area_j)
-!	    ENDDO
-!	 ENDDO
 # endif
 
-! static
-       !Careful when "Mloc" on grid1 < "Mloc" on grid2
-	 ! --> Dx_Tile in some index = 0
-       !DX_Tile(1:Mloc,1:Nloc,ng)=DX_Tile(1:Mloc,1:Nloc,ng-1)/isk
-       !DY_Tile(1:Mloc,1:Nloc,ng)=DY_Tile(1:Mloc,1:Nloc,ng-1)/isk
 
-# if defined (CARTESIAN)
-       DX_Tile(ng) = DX_Tile(ng-1)/RATIO_SPACING(ng)
-	 DY_Tile(ng) = DY_Tile(ng-1)/RATIO_SPACING(ng)
-# else
-       Dphi_r=Dphi*pi/180.0_SP
-       Dtheta_r=Dtheta*pi/180.0_SP
-
-       Do J=1,Nloc
-       Do I=1,Mloc
-# if defined (PARALLEL)
-          Lat_theta(I,J)=Lat_South*pi/180.0_SP-Nghost*Dtheta_r &
-                         +(npy*Nglob/py+J-1)*Dtheta_r
-# else
-          Lat_theta(I,J)=Lat_South*pi/180.0_SP-Nghost*Dtheta_r &
-                        +(J-1)*Dtheta_r
-# endif
-          !DX_Tile(I,J,ng) = R_earth*Dphi_r*COS(Lat_theta(I,J))/isk
-          !DY_Tile(I,J,ng) = R_earth*Dtheta_r/isk
-	    DX_Tile(I,J,ng) = R_earth*Dphi_r*COS(Lat_theta(I,J))/TOTALRATIO_SPACING(ng)
-	    DY_Tile(I,J,ng) = R_earth*Dtheta_r/TOTALRATIO_SPACING(ng)
-       ENDDO
-       ENDDO
-# endif
-
-! depth
 # if defined (PARALLEL)
 	 ParMloc = GridDimX(ng-1)/px + 2*Nghost
 	 ParNloc = GridDimY(ng-1)/py + 2*Nghost
@@ -193,6 +151,33 @@ SUBROUTINE INITIAL_GRID(ng)
 	 ParNloc1 = ParNloc+1
 
 # endif
+
+       !Careful when "Mloc" on grid1 < "Mloc" on grid2
+	 ! --> Dx_Tile in some index = 0
+       !DX_Tile(1:Mloc,1:Nloc,ng)=DX_Tile(1:Mloc,1:Nloc,ng-1)/isk
+       !DY_Tile(1:Mloc,1:Nloc,ng)=DY_Tile(1:Mloc,1:Nloc,ng-1)/isk
+
+! Lat_theta
+# if defined (CARTESIAN)
+       DX_Tile(ng) = DX_Tile(ng-1)/RATIO_SPACING(ng)
+	 DY_Tile(ng) = DY_Tile(ng-1)/RATIO_SPACING(ng)
+       
+# else
+	 CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  Lat_Theta_Tile(1:ParMloc,1:ParNloc,ng-1),Lat_Theta_Tile(1:Mloc,1:Nloc,ng),ng)
+
+       Dphi_r=Dphi*pi/180.0_SP
+       Dtheta_r=Dtheta*pi/180.0_SP
+
+       Do J=1,Nloc
+       Do I=1,Mloc
+	    DX_Tile(I,J,ng) = R_earth*Dphi_r*COS(Lat_Theta_Tile(I,J,ng))/TOTALRATIO_SPACING(ng)
+	    DY_Tile(I,J,ng) = R_earth*Dtheta_r/TOTALRATIO_SPACING(ng)
+	    Coriolis_Tile(I,J,ng) = pi*SIN( Lat_Theta_Tile(I,J,ng) ) / 21600.0_SP
+       ENDDO
+       ENDDO
+# endif
+
 ! Eta
        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
                   Eta_Tile(1:ParMloc,1:ParNloc,ng-1),Eta_Tile(1:Mloc,1:Nloc,ng),ng)
@@ -200,9 +185,14 @@ SUBROUTINE INITIAL_GRID(ng)
 	 !call mpi_finalize(ier) !ykchoi test
 
 	 IF( ADJUSTL(trim(DEPTH_TYPE_SUB(1:3))) == 'DAT' )THEN
+!-------------------------------------
+!--------- Depth data from data
+!-------------------------------------
 
 # if defined (PARALLEL)
-         call GetFileChild(DEPTH_FILE_SUB(ng),Depth_Tile(1:Mloc,1:Nloc,ng) )
+         call GetFileChild( ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))),Depth_Tile(1:Mloc,1:Nloc,ng) )
+
+	   !consider "waterlevel" later
 
          ! re-construct Depth
          DO J=1,Nloc
@@ -225,9 +215,6 @@ SUBROUTINE INITIAL_GRID(ng)
             DepthY_Tile(I,Nloc1,ng)=0.5_SP*(3.0_SP*Depth_Tile(I,Nloc,ng)-Depth_Tile(I,Nloc-1,ng))
          ENDDO
 
-	   call phi_exch( DepthX_Tile(1:Mloc,1:Nloc,ng) )
-	   call phi_exch( DepthY_Tile(1:Mloc,1:Nloc,ng) )
-
          ! For consistency with init.F
 	   DO J=1,Nloc
          DO I=1,Mloc
@@ -237,14 +224,14 @@ SUBROUTINE INITIAL_GRID(ng)
 
          ENDDO
          ENDDO
-	   !  consider "waterlevel" later
-
 # else
+         ! Serial
          OPEN( 1, FILE=ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))) )
 	   DO J=1,Nloc
 	      READ(1,*)( Depth_Tile(I,J,ng), I=1,Mloc )
 	   ENDDO
          CLOSE(1)
+         !consider "waterlevel" later
 
          ! re-construct Depth
          DO J=1,Nloc
@@ -276,20 +263,43 @@ SUBROUTINE INITIAL_GRID(ng)
 
          ENDDO
          ENDDO
-	   !  consider "waterlevel" later
-
 # endif
+
 	 ELSE
+!-------------------------------------
+!--------- Depth data by interpolation
+!-------------------------------------
 
          CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
                   Depth_Tile(1:ParMloc,1:ParNloc,ng-1),Depth_Tile(1:Mloc,1:Nloc,ng),ng)
 
-         CALL LINEAR_INTERP(ParMloc1,ParNloc,Mloc1,Nloc,mbox1,nbox1,isk, &
-                  DepthX_Tile(1:ParMloc1,1:ParNloc,ng-1),DepthX_Tile(1:Mloc1,1:Nloc,ng),ng)
+         DO J=1,Nloc
+         DO I=2,Mloc
+	      DepthX_Tile(I,J,ng) = 0.5_SP*( Depth_Tile(I-1,J,ng) + Depth_Tile(I,J,ng) )
+         ENDDO
+         ENDDO
+         DO J=1,Nloc
+	      DepthX_Tile(1,J,ng) = 0.5_SP*( 3.0_SP*Depth_Tile(1,J,ng) - Depth_Tile(2,J,ng) )
+	      DepthX_Tile(Mloc1,J,ng) = 0.5_SP*( 3.0_SP*Depth_Tile(Mloc,J,ng) - Depth_Tile(Mloc-1,J,ng) )
+         ENDDO
 
-         CALL LINEAR_INTERP(ParMloc,ParNloc1,Mloc,Nloc1,mbox1,nbox1,isk, &
-                  DepthY_Tile(1:ParMloc,1:ParNloc1,ng-1),DepthY_Tile(1:Mloc,1:Nloc1,ng),ng)
+         DO J=2,Nloc
+         DO I=1,Mloc
+	      DepthY_Tile(I,J,ng) = 0.5_SP*( Depth_Tile(I,J-1,ng) + Depth_Tile(I,J,ng) )
+         ENDDO
+         ENDDO
+         DO I=1,Mloc
+	      DepthY_Tile(I,1,ng) = 0.5_SP*( 3.0_SP*Depth_Tile(I,1,ng) - Depth_Tile(I,2,ng) )
+	      DepthY_Tile(I,Nloc1,ng) = 0.5_SP*( 3.0_SP*Depth_Tile(I,Nloc,ng) - Depth_Tile(I,Nloc-1,ng) )
+         ENDDO
+
+         !CALL LINEAR_INTERP(ParMloc1,ParNloc,Mloc1,Nloc,mbox1,nbox1,isk, &
+         !         DepthX_Tile(1:ParMloc1,1:ParNloc,ng-1),DepthX_Tile(1:Mloc1,1:Nloc,ng),ng)
+
+         !CALL LINEAR_INTERP(ParMloc,ParNloc1,Mloc,Nloc1,mbox1,nbox1,isk, &
+         !         DepthY_Tile(1:ParMloc,1:ParNloc1,ng-1),DepthY_Tile(1:Mloc,1:Nloc1,ng),ng)
 	 ENDIF
+
 !======ykchoi 08/10/2018, 08/15/2018
        IF(IN_Cd) THEN
        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
@@ -300,8 +310,6 @@ SUBROUTINE INITIAL_GRID(ng)
 
 !------------------------------------------------------------------
 !------------------------------------------------ ykchoi 07/24/2018
-! Young-Kwang Choi
-! In this version, the easiest way is applied to see propagation of water waves in water-land cells.
 !==============MASK_STRUC
 	 MASK_STRUC_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
        ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
@@ -327,7 +335,53 @@ SUBROUTINE INITIAL_GRID(ng)
        
 	 MASK_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
 	 DEALLOCATE( rMASKParent, rMASKChild )
-	 
+
+# if defined(PARALLEL)
+      CALL PHI_INT_EXCH( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+	CALL PHI_INT_EXCH( MASK_Tile(1:Mloc,1:Nloc,ng) )
+# endif
+
+# if defined (IGNORE_BIG_SLOPE)
+    ! do not truncate depthx and depthy
+# else
+	 DO J=2,Nloc-1
+	 DO I=2,Mloc-1
+         IF( MASK_Tile(I,J,ng) < 1 )THEN
+           DepthX_Tile(I,J,ng) = Depth_Tile(I-1,J,ng)
+           DepthX_Tile(I+1,J,ng) = Depth_Tile(I+1,J,ng)
+           DepthY_Tile(I,J,ng) = Depth_Tile(I,J-1,ng)
+           DepthY_Tile(I,J+1,ng) = Depth_Tile(I,J+1,ng)
+         ENDIF
+	 ENDDO
+	 ENDDO
+# endif
+
+! wrong idea - ykchoi 09/11/2018
+! # if defined (PARALLEL)
+!      call phi_exch( DepthX_Tile(1:Mloc,1:Nloc,ng) )
+!      call phi_exch( DepthY_Tile(1:Mloc,1:Nloc,ng) )
+! # endif
+
+# if defined(CARTESIAN)
+
+# else
+	 ! for spherical mode : ykchoi 09/11/2018
+	 DO J=Jbeg,Jend
+	 DO I=Ibeg,Iend
+
+          SlopeX_Tile(I,J,ng) = ( DepthX_Tile(I+1,J,ng) - DepthX_Tile(I,J,ng) )/DX_Tile(I,J,ng)
+          SlopeY_Tile(I,J,ng) = ( DepthY_Tile(I,J+1,ng) - DepthY_Tile(I,J,ng) )/DY_Tile(I,J,ng)
+          IF(SLOPE_CTR)THEN
+            IF( ABS(SlopeX_Tile(I,J,ng)) > MAX_SLOPE )    &
+		     SlopeX_Tile(I,J,ng)=SIGN(MAX_SLOPE,SlopeX_Tile(I,J,ng))
+            IF( ABS(SlopeY_Tile(I,J,ng)) > MAX_SLOPE )    &
+		     SlopeY_Tile(I,J,ng)=SIGN(MAX_SLOPE,SlopeY_Tile(I,J,ng))
+          ENDIF
+
+	 ENDDO
+	 ENDDO
+# endif
+ 
        !DO J=1,Nloc
        !DO I=1,Mloc
        ! IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
@@ -355,8 +409,6 @@ SUBROUTINE INITIAL_GRID(ng)
       ENDDO
 
 # if defined(PARALLEL)
-      CALL PHI_INT_EXCH( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
-	CALL PHI_INT_EXCH( MASK_Tile(1:Mloc,1:Nloc,ng) )
       CALL PHI_INT_EXCH( MASK9_Tile(1:Mloc,1:Nloc,ng) )
 # endif
 !------------------------------------------------ ykchoi 07/24/2018
@@ -378,13 +430,6 @@ SUBROUTINE INITIAL_GRID(ng)
        CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
                   Vbar_Tile(1:ParMloc,1:ParNloc,ng-1),Vbar_Tile(1:Mloc,1:Nloc,ng),ng)
 
-! Lat_theta
-# if defined (CARTESIAN)
-       
-# else
-	 CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  Lat_Theta_Tile(1:ParMloc,1:ParNloc,ng-1),Lat_Theta_Tile(1:Mloc,1:Nloc,ng),ng)
-# endif
 ! exchange for parallel !!!
 
      ENDIF  ! end ng
@@ -513,6 +558,7 @@ SUBROUTINE LOAD_DATA(ng)
       ! No variables "Lat_Theta"
 # else
      Lat_Theta(1:Mloc,1:Nloc) = Lat_Theta_Tile(1:Mloc,1:Nloc,ng)
+     Coriolis(1:Mloc,1:Nloc) = Coriolis_Tile(1:Mloc,1:Nloc,ng)
 # endif
 
      Eta(1:Mloc,1:Nloc) = Eta_Tile(1:Mloc,1:Nloc,ng)
@@ -538,6 +584,8 @@ SUBROUTINE LOAD_DATA(ng)
 # else
      DX(1:Mloc,1:Nloc) = DX_Tile(1:Mloc,1:Nloc,ng)
      DY(1:Mloc,1:Nloc) = DY_Tile(1:Mloc,1:Nloc,ng)
+     SlopeX(1:Mloc,1:Nloc) = SlopeX_Tile(1:Mloc,1:Nloc,ng)
+     SlopeY(1:Mloc,1:Nloc) = SlopeY_Tile(1:Mloc,1:Nloc,ng)
 # endif
 
 END SUBROUTINE LOAD_DATA
@@ -703,7 +751,7 @@ SUBROUTINE CALC_GRID(ng,NestStep,NestTotal)
      MASK_TILE(1:Mloc,1:Nloc,ng) = MASK(1:Mloc,1:Nloc)
      MASK9_TILE(1:Mloc,1:Nloc,ng) = MASK9(1:Mloc,1:Nloc)
      
-     MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)   !ykchoi 07/24/2018
+      !MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = MASK_STRUC(1:Mloc,1:Nloc)   !ykchoi 07/24/2018
 
      U_TILE(1:Mloc,1:Nloc,ng) = U(1:Mloc,1:Nloc)
      V_TILE(1:Mloc,1:Nloc,ng) = V(1:Mloc,1:Nloc)

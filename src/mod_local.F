@@ -21,7 +21,8 @@ MODULE LOCAL
 # if defined(CARTESIAN)
 !   don't need latitude
 # else
-         REAL(SP),DIMENSION(:,:,:),ALLOCATABLE :: Lat_Theta_Tile
+         REAL(SP),DIMENSION(:,:,:),ALLOCATABLE :: Lat_Theta_Tile, Coriolis_Tile
+         REAL(SP),DIMENSION(:,:,:),ALLOCATABLE :: SlopeX_Tile, SlopeY_Tile   !ykchoi 09/11/2018
 # endif
 
 ! variable
@@ -69,7 +70,10 @@ SUBROUTINE ALLOCATE_VAR_TILE
 # if defined(CARTESIAN)
 !   no latitude for cartesian
 # else
-       ALLOCATE ( Lat_theta_Tile(MaxDimX,MaxDimY,NumGrid))
+       ALLOCATE ( Lat_theta_Tile(MaxDimX,MaxDimY,NumGrid), &
+	            Coriolis_Tile(MaxDimX,MaxDimY,NumGrid), &
+				SlopeX_Tile(MaxDimX,MaxDimY,NumGrid),  &    !ykchoi 09/11/2018
+				SlopeY_Tile(MaxDimX,MaxDimY,NumGrid) )      !ykchoi 09/11/2018
 # endif
 ! dynamic
        ALLOCATE ( U_Tile(MaxDimX,MaxDimY,NumGrid))

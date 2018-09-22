@@ -60,8 +60,6 @@ PROGRAM MASTER
 
         DO Kgrid=1,NumGrid
 
-           !NumInternal=RATIO_SPACING(Kgrid)
-           !IF(Kgrid.GT.1) DT=DT_grid1/RATIO_SPACING(Kgrid)		 
            NumInternal=TOTALRATIO_SPACING(Kgrid)
            IF(Kgrid.GT.1) DT=DT_grid1/TOTALRATIO_SPACING(Kgrid)
 	       
@@ -70,19 +68,16 @@ PROGRAM MASTER
               ! subgrid (initial)
 			IF(Ksubgrid_internal == 1)THEN   !addition
                 IF(Kgrid.LT.NumGrid)THEN
-!                  IF(START_GRID(Kgrid+1))THEN
 	            
                     CALL INDEX_LOCAL(Kgrid+1)
                     CALL GET_NESTING_BC(Kgrid+1,1)
 
-!                  ENDIF
                 ENDIF
               ENDIF
               
 			CALL INDEX_LOCAL(Kgrid)
 			CALL LOAD_DATA(Kgrid)  !for print subgrid at initial
 
-!              IF(START_GRID(Kgrid))THEN                
                 CALL CALC_GRID(Kgrid,Ksubgrid_internal,NumInternal)
                 IF(Kgrid.EQ.1)DT_grid1=DT
 
@@ -101,17 +96,14 @@ PROGRAM MASTER
 	              ENDIF
 	            ENDIF
                 ENDIF
-!              ENDIF
 
               ! subgrid (boundary)
 			IF(Ksubgrid_internal == NumInternal)THEN   !addition
                 IF(Kgrid.LT.NumGrid)THEN
-!                  IF(START_GRID(Kgrid+1))THEN
 
                     CALL INDEX_LOCAL(Kgrid+1)
                     CALL GET_NESTING_BC(Kgrid+1,2)
 
-!                  ENDIF
 			  ENDIF
               ENDIF
 

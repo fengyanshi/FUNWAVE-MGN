@@ -119,9 +119,9 @@ SUBROUTINE ALLOCATE_VARIABLES
 	 ALLOCATE( EastParentID(Nghost,Nloc,NumGrid), &
 			   WestParentID(Nghost,Nloc,NumGrid), &
 			   SouthParentID(Mloc,Nghost,NumGrid), &
-			   NorthParentID(Mloc,Nghost,NumGrid) )
+			   NorthParentID(Mloc,Nghost,NumGrid)  )
 
-!  07/24/2018	   ParentDomainID(Mloc, Nloc, NumGrid)  )
+!			   ParentDomainID(Mloc, Nloc, NumGrid)  )
 # endif
      ENDIF
 !========================================================
@@ -1067,30 +1067,6 @@ SUBROUTINE INITIALIZATION
 
 # endif
  
-
-# if defined(CARTESIAN)
-# else
-    ! use slope control in caution, should set false unless for a spherical
-    ! ocean basin domain and a huge slope at coastline. 
-    SLOPE_CTR = .FALSE.
-    MAX_SLOPE = 0.1
-    IF(SLOPE_CTR)THEN
-      WRITE(*,*)'SLOPE CONTROL IS ON'
-    ENDIF
-
-    DO J=Jbeg,Jend
-    DO I=Ibeg,Iend
-      SlopeX(I,J) = (Depthx(I+1,J)-Depthx(I,J))/DX(I,J)
-      SlopeY(I,J) = (Depthy(I,J+1)-Depthy(I,J))/DY(I,J)
-      IF(SLOPE_CTR)THEN
-        IF(ABS(SlopeX(I,J))>MAX_SLOPE)SlopeX(I,J)=SIGN(MAX_SLOPE,SlopeX(I,J))
-        IF(ABS(SlopeY(I,J))>MAX_SLOPE)SlopeY(I,J)=SIGN(MAX_SLOPE,SlopeY(I,J))
-      ENDIF
-    ENDDO
-    ENDDO
-
-# endif
-
 ! deal with masks, this is great for an extremely large bed slope
 ! at edges of mask point, depth at cell interface can cause unreasonable large 
 ! depth gradient, even if the slope cap is on. Making depth locally flat can avoid
@@ -1113,6 +1089,30 @@ SUBROUTINE INITIALIZATION
         ENDIF
       ENDDO
       ENDDO
+# endif
+
+! ykchoi 09/11/2018 : move back to consider above routine
+# if defined(CARTESIAN)
+# else
+    ! use slope control in caution, should set false unless for a spherical
+    ! ocean basin domain and a huge slope at coastline. 
+    SLOPE_CTR = .FALSE.
+    MAX_SLOPE = 0.1
+    IF(SLOPE_CTR)THEN
+      WRITE(*,*)'SLOPE CONTROL IS ON'
+    ENDIF
+
+    DO J=Jbeg,Jend
+    DO I=Ibeg,Iend
+      SlopeX(I,J) = (Depthx(I+1,J)-Depthx(I,J))/DX(I,J)
+      SlopeY(I,J) = (Depthy(I,J+1)-Depthy(I,J))/DY(I,J)
+      IF(SLOPE_CTR)THEN
+        IF(ABS(SlopeX(I,J))>MAX_SLOPE)SlopeX(I,J)=SIGN(MAX_SLOPE,SlopeX(I,J))
+        IF(ABS(SlopeY(I,J))>MAX_SLOPE)SlopeY(I,J)=SIGN(MAX_SLOPE,SlopeY(I,J))
+      ENDIF
+    ENDDO
+    ENDDO
+
 # endif
 
       IF(SHOW_BREAKING)THEN
