@@ -1,2 +1,4 @@
 % GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
 48  48  2  4  4
+%Depth Subgrid (DATA or NONE)
+%NONE

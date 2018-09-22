@@ -5,13 +5,14 @@ dx1=10;     dy1=10;
 %==============
 Nghost=4;
 
-fdir='../result/';
+fdir='/Users/fengyanshi15/tmp1/';
 fdir1='../';
 
-grid=load(['../subgrid_info.txt']);
+grid=load(['../work/subgrid_info.txt']);
 dep=load([fdir 'Grd01_dep.out']);
 
 [n1, m1]=size(dep);
+
 x1 = 0 : dx1 : (m1-1)*dx1;
 y1 = 0 : dy1 : (n1-1)*dy1;
 [Xgrid1, Ygrid1]=meshgrid(x1,y1);
@@ -69,7 +70,7 @@ box on;
 pause(0.5)
 
 pname = ['surf_',num2str(fname),'.png'];
-print ('-dpng', pname);
+%print ('-dpng', pname);
 
 % pname = ['surf_',num2str(fname),'.bmp'];
 % print ('-dbmp','-r300', pname);
