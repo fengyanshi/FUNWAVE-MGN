@@ -34,7 +34,7 @@ Xslp = 50.0
   ! -------------------PRINT---------------------------------
   ! PRINT*,
   ! result folder
-RESULT_FOLDER = ./result/
+RESULT_FOLDER = /Users/fengyanshi15/tmp1/
 
   ! ------------------DIMENSION-----------------------------
   ! global grid dimension
