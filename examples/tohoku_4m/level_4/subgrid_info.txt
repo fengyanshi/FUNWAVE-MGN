@@ -1,0 +1,7 @@
+% GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
+1600  1200  4  1200  1350
+1000  1000  2  1000  450
+260  240  2  790  515
+80  80  2  190  35
+% Depth Type
+None
