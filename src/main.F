@@ -13,12 +13,13 @@ SUBROUTINE INITIAL_GRID(ng)
      REAL(SP) :: Dphi_r,Dtheta_r  !ykchoi
      INTEGER :: ParMloc, ParNloc, ParMloc1, ParNloc1  !ykchoi
 
-     REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
+      !REAL(SP),DIMENSION(:,:),ALLOCATABLE :: rMASKParent, rMASKChild  !ykchoi  07/24/2018
 
 # if defined (PARALLEL)
      INTEGER :: parent_area_i, parent_area_j
      INTEGER :: area_i, area_j
      INTEGER :: II,JJ
+     REAL(SP),DIMENSION(:,:),ALLOCATABLE :: VarGlobSub 
 # endif
      
 ! for ng=1
@@ -178,19 +179,14 @@ SUBROUTINE INITIAL_GRID(ng)
        ENDDO
 # endif
 
-! Eta
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  Eta_Tile(1:ParMloc,1:ParNloc,ng-1),Eta_Tile(1:Mloc,1:Nloc,ng),ng)
-
-	 !call mpi_finalize(ier) !ykchoi test
-
 	 IF( ADJUSTL(trim(DEPTH_TYPE_SUB(1:3))) == 'DAT' )THEN
 !-------------------------------------
 !--------- Depth data from data
 !-------------------------------------
 
 # if defined (PARALLEL)
-         call GetFileChild( ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))),Depth_Tile(1:Mloc,1:Nloc,ng) )
+         !call GetFileChild( ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))),Depth_Tile(1:Mloc,1:Nloc,ng) )
+	   call GetFileChild( DEPTH_FILE_SUB(ng),Depth_Tile(1:Mloc,1:Nloc,ng) )
 
 	   !consider "waterlevel" later
 
@@ -216,17 +212,17 @@ SUBROUTINE INITIAL_GRID(ng)
          ENDDO
 
          ! For consistency with init.F
-	   DO J=1,Nloc
-         DO I=1,Mloc
+	   !DO J=1,Nloc
+         !DO I=1,Mloc
 
-           Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
-	                          DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
+         !  Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
+	   !                       DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
 
-         ENDDO
-         ENDDO
+         !ENDDO
+         !ENDDO
 # else
          ! Serial
-         OPEN( 1, FILE=ADJUSTL(TRIM(DEPTH_FILE_SUB(ng))) )
+         OPEN( 1, FILE=TRIM(DEPTH_FILE_SUB(ng)) )
 	   DO J=1,Nloc
 	      READ(1,*)( Depth_Tile(I,J,ng), I=1,Mloc )
 	   ENDDO
@@ -255,14 +251,14 @@ SUBROUTINE INITIAL_GRID(ng)
          ENDDO
 
          ! For consistency with init.F
-	   DO J=1,Nloc
-         DO I=1,Mloc
+	   !DO J=1,Nloc
+         !DO I=1,Mloc
 
-           Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
-	                          DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
+         !  Depth_Tile(I,J,ng) = 0.25_SP*( DepthX_Tile(I,J,ng) + DepthX_Tile(I+1,J,ng) + &
+	   !                       DepthY_Tile(I,J,ng) + DepthY_Tile(I,J+1,ng) )
 
-         ENDDO
-         ENDDO
+         !ENDDO
+         !ENDDO
 # endif
 
 	 ELSE
@@ -308,33 +304,103 @@ SUBROUTINE INITIAL_GRID(ng)
 	 CD_Tile(:,:,ng)=Cd_fixed
        ENDIF	  
 
+! Eta
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  Eta_Tile(1:ParMloc,1:ParNloc,ng-1),Eta_Tile(1:Mloc,1:Nloc,ng),ng)
+
+	 !call mpi_finalize(ier) !ykchoi test
+
+! U
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  U_Tile(1:ParMloc,1:ParNloc,ng-1),U_Tile(1:Mloc,1:Nloc,ng),ng)
+
+! V
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  V_Tile(1:ParMloc,1:ParNloc,ng-1),V_Tile(1:Mloc,1:Nloc,ng),ng)
+
+! Ubar
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  Ubar_Tile(1:ParMloc,1:ParNloc,ng-1),Ubar_Tile(1:Mloc,1:Nloc,ng),ng)
+
+! Vbar
+       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+                  Vbar_Tile(1:ParMloc,1:ParNloc,ng-1),Vbar_Tile(1:Mloc,1:Nloc,ng),ng)
+
 !------------------------------------------------------------------
 !------------------------------------------------ ykchoi 07/24/2018
 !==============MASK_STRUC
 	 MASK_STRUC_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
-       ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
 
-	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_STRUC_Tile(1:ParMloc,1:ParNloc,ng-1) )
-	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+! =============================================
+! ==============For tsunami case 09 / 22 / 2018
+	 IF(OBSTACLE)THEN
+	 IF( ADJUSTL(trim( STRUCT_TYPE_SUB(1:3) )) == 'DAT' )THEN
+# if defined (PARALLEL)
+         ALLOCATE ( VarGlobSub(Mloc,Nloc) )
+         !call GetFileChild( ADJUSTL(TRIM( STRUCT_FILE_SUB(ng) )), VarGlobSub(1:Mloc,1:Nloc) )
+	   call GetFileChild( STRUCT_FILE_SUB(ng), VarGlobSub(1:Mloc,1:Nloc) )
+         MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = INT( VarGlobSub(1:Mloc,1:Nloc) )
+         DEALLOCATE(VarGlobSub)
+# else
+         ! Serial
+         OPEN( 1, FILE=TRIM(STRUCT_FILE_SUB(ng)) )
+	   DO J=1,Nloc
+	      READ(1,*)( MASK_STRUC_Tile(I,J,ng), I=1,Mloc )
+	   ENDDO
+         CLOSE(1)
+# endif
+	 ENDIF
+	   !DO J=1,Nloc
+         !DO I=1,Mloc
+	   ! IF( DEPTH_Tile(I,J,ng) < 0.0_SP ) THEN
+	   !   MASK_STRUC_Tile(I,J,ng) = 0
+	   !   Depth_Tile(I,J,ng) = -LARGE
+	   ! ENDIF
+         !ENDDO
+         !ENDDO
+	 ENDIF
+! ==============For tsunami case 09 / 22 / 2018
+! =============================================
+       !ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
+	 !rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_STRUC_Tile(1:ParMloc,1:ParNloc,ng-1) )
+	 !rMASKChild(1:Mloc,1:Nloc) = real( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
+       !CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+       !           rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)	 
+	 !MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+	 !DEALLOCATE( rMASKParent, rMASKChild )
 
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
-	 
-	 MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
-	 DEALLOCATE( rMASKParent, rMASKChild )
 
 !==============MASK
 	 MASK_Tile(:,:,ng) = 1  !1 - wet;  0 - dry
-       ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
 
-	 rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_Tile(1:ParMloc,1:ParNloc,ng-1) )
-	 rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+       DO J=1,Nloc
+       DO I=1,Mloc
+         IF( MASK_STRUC_Tile(I,J,ng) == 1 ) THEN
+         
+	     IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
+             MASK_Tile(I,J,ng)=0
+             Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
+           ELSE
+             MASK_Tile(I,J,ng)=1
+           ENDIF
+         
+	   ELSE         
+	   
+	     Depth_Tile(I,J,ng) = -LARGE	   
+	   
+	   ENDIF
+       ENDDO
+       ENDDO
 
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)
-       
-	 MASK_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
-	 DEALLOCATE( rMASKParent, rMASKChild )
+	 MASK_Tile(:,:,ng)=MASK_Tile(:,:,ng)*MASK_STRUC_Tile(:,:,ng)
+
+       !ALLOCATE( rMASKParent(1:ParMloc,1:ParNloc), rMASKChild(1:Mloc,1:Nloc) )
+	 !rMASKParent(1:ParMloc,1:ParNloc) = real( MASK_Tile(1:ParMloc,1:ParNloc,ng-1) )
+	 !rMASKChild(1:Mloc,1:Nloc) = real( MASK_Tile(1:Mloc,1:Nloc,ng) )
+       !CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
+       !           rMASKParent(1:ParMloc,1:ParNloc),rMASKChild(1:Mloc,1:Nloc),ng)       
+	 !MASK_Tile(1:Mloc,1:Nloc,ng) = INT( rMASKChild(1:Mloc,1:Nloc) )
+	 !DEALLOCATE( rMASKParent, rMASKChild )
 
 # if defined(PARALLEL)
       CALL PHI_INT_EXCH( MASK_STRUC_Tile(1:Mloc,1:Nloc,ng) )
@@ -380,18 +446,7 @@ SUBROUTINE INITIAL_GRID(ng)
 
 	 ENDDO
 	 ENDDO
-# endif
- 
-       !DO J=1,Nloc
-       !DO I=1,Mloc
-       ! IF( Eta_Tile(I,J,ng) < -DEPTH_Tile(I,J,ng) ) THEN
-       !  MASK_Tile(I,J,ng)=0
-       !  Eta_Tile(I,J,ng)=MinDepth-Depth_Tile(I,J,ng)
-       ! ELSE
-       !  MASK_Tile(I,J,ng)=1
-       ! ENDIF
-       !ENDDO
-       !ENDDO
+# endif 
 
 !==============MASK9
 	MASK9_Tile(:,:,ng) = 1  !1 - Boussinesq;  0 - SWE
@@ -413,24 +468,6 @@ SUBROUTINE INITIAL_GRID(ng)
 # endif
 !------------------------------------------------ ykchoi 07/24/2018
 !------------------------------------------------------------------
-
-! U
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  U_Tile(1:ParMloc,1:ParNloc,ng-1),U_Tile(1:Mloc,1:Nloc,ng),ng)
-
-! V
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  V_Tile(1:ParMloc,1:ParNloc,ng-1),V_Tile(1:Mloc,1:Nloc,ng),ng)
-
-! Ubar
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  Ubar_Tile(1:ParMloc,1:ParNloc,ng-1),Ubar_Tile(1:Mloc,1:Nloc,ng),ng)
-
-! Vbar
-       CALL LINEAR_INTERP(ParMloc,ParNloc,Mloc,Nloc,mbox1,nbox1,isk, &
-                  Vbar_Tile(1:ParMloc,1:ParNloc,ng-1),Vbar_Tile(1:Mloc,1:Nloc,ng),ng)
-
-! exchange for parallel !!!
 
      ENDIF  ! end ng
 
@@ -510,7 +547,6 @@ SUBROUTINE LINEAR_INTERP(MaxM,MaxN,M,N,mb,nb,isk,Fin,Fout,ng)
 
 # if defined (PARALLEL)
 
-! ykchoi delete 0522
        DO J=1,N
         DO I=1,M
          II = mb + (I-1+(M-2*Nghost)*npx)/isk
@@ -899,6 +935,25 @@ SUBROUTINE TWOWAY_NESTING(ng)
 
 	MASK_Tile(1:mloc_grid1,1:nloc_grid1,ng-1) = INT( rMASKParent(1:mloc_grid1,1:nloc_grid1) )
 	DEALLOCATE( rMASKChild, rMASKParent )
+
+! =============================================
+! ==============For tsunami case 09 / 22 / 2018
+	IF( OBSTACLE )THEN
+        DO J=1,nloc_grid1
+        DO I=1,mloc_grid1
+          IF( MASK_STRUC_Tile(I,J,ng-1) .eq. 0 ) THEN
+            Eta_Tile(I,J,ng-1)=0.0_SP
+            U_Tile(I,J,ng-1)=0.0_SP
+            V_Tile(I,J,ng-1)=0.0_SP
+            Ubar_Tile(I,J,ng-1)=0.0_SP
+            Vbar_Tile(I,J,ng-1)=0.0_SP
+            MASK_Tile(I,J,ng-1)=0
+          ENDIF
+        ENDDO
+        ENDDO
+	ENDIF
+! ==============For tsunami case 09 / 22 / 2018
+! =============================================
 
 !==============MASK9
 	ALLOCATE( rMASKChild(1:Mloc,1:Nloc), rMASKParent(1:mloc_grid1,1:nloc_grid1) )

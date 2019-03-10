@@ -1,7 +1,7 @@
 #-----------BEGIN MAKEFILE-------------------------------------------------
             SHELL         = /bin/sh
             DEF_FLAGS     = -P -C -traditional 
-            EXEC          = funwave_nest
+            EXEC          = mynest
 #==========================================================================
 #--------------------------------------------------------------------------
 #        PRECISION          DEFAULT PRECISION: SINGLE                     
@@ -11,13 +11,14 @@
             FLAG_1 = -DDOUBLE_PRECISION 
             FLAG_2 = -DPARALLEL
             FLAG_3 = -DSAMPLES
-            FLAG_4 = -DCARTESIAN
+#            FLAG_4 = -DCARTESIAN
 #              FLAG_6 = -DINTEL
 #             FLAG_7 = -DMIXING
 #             FLAG_8 = -DCOUPLING
-#             FLAG_9 = -DZALPHA
+             FLAG_9 = -DZALPHA
 #             FLAG_10 = -DMANNING
 #             FLAG_11 = -DSPHERICAL_IJ_STATION
+#            FLAG_21 = -DFILTERING
 
 #--------------------------------------------------------------------------
 #  mpi defs 

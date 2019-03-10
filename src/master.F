@@ -6,7 +6,7 @@ PROGRAM MASTER
      IMPLICIT NONE
      REAL(SP) :: DT_grid1
      INTEGER :: Kgrid,Isubgrid,Nsubgrid,VTYPE
-     INTEGER :: Ksubgrid_internal,NumInternal,start_count
+     INTEGER :: Ksubgrid_internal,NumInternal
 
 # if defined (PARALLEL)
      call MPI_INIT ( ier )
@@ -46,9 +46,6 @@ PROGRAM MASTER
       !record wall time
      call WALL_TIME_SECS(tbegin)
 
-     START_GRID(1)=.TRUE.
-     START_COUNT=1
-
      DO Kgrid=2,NumGrid
 	  CALL INDEX_LOCAL(Kgrid)
 	  CALL INITIAL_GRID(Kgrid)
@@ -60,6 +57,8 @@ PROGRAM MASTER
 
         DO Kgrid=1,NumGrid
 
+           !NumInternal=RATIO_SPACING(Kgrid)
+           !IF(Kgrid.GT.1) DT=DT_grid1/RATIO_SPACING(Kgrid)		 
            NumInternal=TOTALRATIO_SPACING(Kgrid)
            IF(Kgrid.GT.1) DT=DT_grid1/TOTALRATIO_SPACING(Kgrid)
 	       
@@ -78,24 +77,26 @@ PROGRAM MASTER
 			CALL INDEX_LOCAL(Kgrid)
 			CALL LOAD_DATA(Kgrid)  !for print subgrid at initial
 
-                CALL CALC_GRID(Kgrid,Ksubgrid_internal,NumInternal)
-                IF(Kgrid.EQ.1)DT_grid1=DT
+              CALL CALC_GRID(Kgrid,Ksubgrid_internal,NumInternal)
+              IF(Kgrid.EQ.1)DT_grid1=DT
 
-                IF(Ksubgrid_internal == NumInternal)THEN
-                  IF(Kgrid .GT. 1) THEN
-	              IF(Kgrid == NumGrid) THEN
+              IF( TwoWayNesting ) THEN
+              IF(Ksubgrid_internal == NumInternal)THEN
+                IF(Kgrid .GT. 1) THEN
+	            IF(Kgrid == NumGrid) THEN
 
-	                DO Nsubgrid=NumGrid,2,-1
+	              DO Nsubgrid=NumGrid,2,-1
 
-	                   CALL INDEX_LOCAL( Nsubgrid )
-	                   CALL LOAD_DATA( Nsubgrid )
-	                   CALL TWOWAY_NESTING( Nsubgrid )					   
+	                 CALL INDEX_LOCAL( Nsubgrid )
+	                 CALL LOAD_DATA( Nsubgrid )
+	                 CALL TWOWAY_NESTING( Nsubgrid )					   
 					    
-	                ENDDO
+	              ENDDO
 
-	              ENDIF
 	            ENDIF
-                ENDIF
+	          ENDIF
+              ENDIF
+              ENDIF
 
               ! subgrid (boundary)
 			IF(Ksubgrid_internal == NumInternal)THEN   !addition
@@ -130,15 +131,10 @@ PROGRAM MASTER
 	!=====================================
 
 	!=====================================
-		 CALL INITIALIZE_VARIABLES
+           IF(NumGrid.GT.1) CALL INITIALIZE_VARIABLES  !ykchoi2019 12/Feb/
 	!=====================================
 
         ENDDO  ! end kgrid
-
-        IF(START_COUNT.LT.NumGrid)THEN
-          START_COUNT=START_COUNT+1
-          START_GRID(START_COUNT)=.TRUE.
-        ENDIF
 
 ! --------------------------------------------- 
      END DO  ! end time

@@ -236,15 +236,9 @@ SUBROUTINE WAVEMAKER_INITIALIZATION
 
       FreqPeak = 1.0_SP/PeakPeriod
 
-# if defined(CARTESIAN)
       CALL CALCULATE_Cm_Sm(Mloc,Nloc,DX,DY,Xc_WK,Ibeg,Jbeg,NumFreq,NumDir,&
                D_gen2D,Phase2D,Width_WK,rlamda2D,beta_gen2D, &
 			 Cm(1:Mloc,1:Nloc,1:NumFreq),Sm(1:Mloc,1:Nloc,1:NumFreq))
-# else
-      CALL CALCULATE_Cm_Sm(Mloc,Nloc,DX(1,1),DY(1,1),Xc_WK,Ibeg,Jbeg,NumFreq,NumDir,&
-               D_gen2D,Phase2D,Width_WK,rlamda2D,beta_gen2D, &
-			 Cm(1:Mloc,1:Nloc,1:NumFreq),Sm(1:Mloc,1:Nloc,1:NumFreq))
-# endif
 
       IF(SHOW_BREAKING)THEN
        T_brk=WAVE_COMP(NumWaveComp,1) 

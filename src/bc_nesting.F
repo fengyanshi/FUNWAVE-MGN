@@ -106,20 +106,18 @@ SUBROUTINE INTERP_BC(MaxM,MaxN,M,N,Nghost,mb,nb,isk,Fin,  &
 			   xx(3) = Fin(loci, locj+1);
 			   xx(4) = Fin(loci+1, locj+1);
 
-			   CALL MPI_ISEND(xx,4,MPI_SP,ProcessorID(1,K),10,MPI_COMM_WORLD,ireq,ier)
-			   CALL MPI_WAIT( ireq, istatus, ier )
-	
+			   CALL MPI_SEND(xx,4,MPI_SP,ProcessorID(1,K),0,MPI_COMM_WORLD,ier)
 	         ENDIF
 
 			 IF( myid == ProcessorID(1,K) ) THEN
-	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,J),10,MPI_COMM_WORLD,ireq,ier)
+	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,J),0,MPI_COMM_WORLD,ireq,ier)
 			   CALL MPI_WAIT( ireq, istatus, ier )
 			   
 			   Fout_west(J,I)  &
 	           = ( (1.0_SP-rII)*xx(1) + rII*xx(2) )*( 1.0_SP-rJJ ) + &
                    ( (1.0_SP-rII)*xx(3) + rII*xx(4) )*rJJ
-
 			 ENDIF
+
 	      ENDDO
 	   ENDDO
 
@@ -187,20 +185,18 @@ SUBROUTINE INTERP_BC(MaxM,MaxN,M,N,Nghost,mb,nb,isk,Fin,  &
 			   xx(3) = Fin(loci, locj+1);
 			   xx(4) = Fin(loci+1, locj+1);
 
-			   CALL MPI_ISEND(xx,4,MPI_SP,ProcessorID(px,K),11,MPI_COMM_WORLD,ireq,ier)
-			   CALL MPI_WAIT( ireq, istatus, ier )
-
+			   CALL MPI_SEND(xx,4,MPI_SP,ProcessorID(px,K),0,MPI_COMM_WORLD,ier)
 			 ENDIF
 
 			 IF( myid == ProcessorID(px,K) ) THEN
-	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(IN,J),11,MPI_COMM_WORLD,ireq,ier)
+	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(IN,J),0,MPI_COMM_WORLD,ireq,ier)
 			   CALL MPI_WAIT( ireq, istatus, ier )
  
 			   Fout_east(J,I-M+Nghost)  &
 	           = ( (1.0_SP-rII)*xx(1) + rII*xx(2) )*( 1.0_SP-rJJ ) + &
-                   ( (1.0_SP-rII)*xx(3) + rII*xx(4) )*rJJ
-	
+                   ( (1.0_SP-rII)*xx(3) + rII*xx(4) )*rJJ	
 			 ENDIF
+
 	      ENDDO
 	   ENDDO
 
@@ -266,12 +262,11 @@ SUBROUTINE INTERP_BC(MaxM,MaxN,M,N,Nghost,mb,nb,isk,Fin,  &
 			   xx(3) = Fin(loci, locj+1);
 			   xx(4) = Fin(loci+1, locj+1);
 	
-			   CALL MPI_ISEND(xx,4,MPI_SP,ProcessorID(K,1),12,MPI_COMM_WORLD,ireq,ier)
-			   CALL MPI_WAIT( ireq, istatus, ier )
+			   CALL MPI_SEND(xx,4,MPI_SP,ProcessorID(K,1),0,MPI_COMM_WORLD,ier)
 	         ENDIF
 
 	         IF( myid == ProcessorID(K,1) ) THEN
-	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,J),12,MPI_COMM_WORLD,ireq,ier)
+	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,J),0,MPI_COMM_WORLD,ireq,ier)
 			   CALL MPI_WAIT( ireq, istatus, ier )
 
 			   Fout_south(I,J)  &
@@ -345,12 +340,11 @@ SUBROUTINE INTERP_BC(MaxM,MaxN,M,N,Nghost,mb,nb,isk,Fin,  &
 			   xx(3) = Fin(loci, locj+1);
 			   xx(4) = Fin(loci+1, locj+1);
 	
-			   CALL MPI_ISEND(xx,4,MPI_SP,ProcessorID(K,py),13,MPI_COMM_WORLD,ireq,ier)
-			   CALL MPI_WAIT( ireq, istatus, ier )
+			   CALL MPI_SEND(xx,4,MPI_SP,ProcessorID(K,py),0,MPI_COMM_WORLD,ier)
 	         ENDIF
 
 	         IF( myid == ProcessorID(K,py) ) THEN
-	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,JN),13,MPI_COMM_WORLD,ireq,ier)
+	           CALL MPI_IRECV(xx,4,MPI_SP,ParentLocalID(I,JN),0,MPI_COMM_WORLD,ireq,ier)
 			   CALL MPI_WAIT( ireq, istatus, ier )
 
 			   Fout_north(I,J-N+Nghost)  &
@@ -485,8 +479,8 @@ SUBROUTINE USE_NESTING_BC(istep,ratio,ng)
 	tmpA1=REAL(istep-1)/REAL(ratio)
 	tmpA2=1.0_SP - tmpA1;
 
-	tmpB1=REAL(istep)/REAL(ratio)
-	tmpB2=1.0_SP - tmpB1;
+	!tmpB1=REAL(istep)/REAL(ratio)
+	!tmpB2=1.0_SP - tmpB1;
 
 ! west boundary
 # if defined(PARALLEL)

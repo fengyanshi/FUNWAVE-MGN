@@ -54,7 +54,7 @@ SUBROUTINE MIXING_STUFF
      USE GLOBAL
      IMPLICIT NONE
 
-! calculate mean for smagorinsky mixing and wave height
+! calculate mean for smagorinsky's mixing and wave height
 	!ykchoi (be careful)
 	!I think Umean, Vmean is not using in other routine.
       IF( time >= STEADY_TIME )THEN    
@@ -90,7 +90,7 @@ END SUBROUTINE MIXING_STUFF
                 HrmsSum,HavgSum, &
 	          !ykchoi
 			  ETA2sum,ETA2mean,SigWaveHeight)
-! calculate mean for smagorinsky mixing and wave height
+! calculate mean for smagorinsky's mixing and wave height
 
       USE PARAM
       IMPLICIT NONE

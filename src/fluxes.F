@@ -77,15 +77,16 @@ SUBROUTINE FLUXES(ng)
 		  SyL(1:Mloc,1:Nloc1),SyR(1:Mloc,1:Nloc1))
 
       ELSE                                     
+
        CALL DelxyFun
        CALL CONSTRUCTION 
        CALL WAVE_SPEED(Mloc,Nloc,Mloc1,Nloc1,  &
 	      UxL(1:Mloc1,1:Nloc),UxR(1:Mloc1,1:Nloc),  &
-		  VyL(1:Mloc,1:Nloc1),VyR(1:Mloc,1:Nloc1),  &
-		  HxL(1:Mloc1,1:Nloc),HxR(1:Mloc1,1:Nloc),  &
-		  HyL(1:Mloc,1:Nloc1),HyR(1:Mloc,1:Nloc1),  &
-            SxL(1:Mloc1,1:Nloc),SxR(1:Mloc1,1:Nloc),  &
-		  SyL(1:Mloc,1:Nloc1),SyR(1:Mloc,1:Nloc1))
+	 		  VyL(1:Mloc,1:Nloc1),VyR(1:Mloc,1:Nloc1),  &
+	 		  HxL(1:Mloc1,1:Nloc),HxR(1:Mloc1,1:Nloc),  &
+	 		  HyL(1:Mloc,1:Nloc1),HyR(1:Mloc,1:Nloc1),  &
+	             SxL(1:Mloc1,1:Nloc),SxR(1:Mloc1,1:Nloc),  &
+	 		  SyL(1:Mloc,1:Nloc1),SyR(1:Mloc,1:Nloc1))
 
      ENDIF
 
@@ -835,6 +836,274 @@ SUBROUTINE CONSTRUCT_X(M,M1,N,DX,Vin,Din,OutL,OutR,Kappa)
 
 END SUBROUTINE CONSTRUCT_X
 
+!-------------------------------------------------------------------------------------
+!
+!    CONSTRUCTION_HO is subroutine for 
+!        high-order interface construction (Yamamoto et al.,1998)
+!
+!    HISTORY: 
+!      09/07/2010 Fengyan Shi
+!             use dummy variables
+!      09/07/2015 Young-Kwang Choi, added MASK9u and MASK9v 
+!      08/31/2016 Choi noticed 4th-order + minmod is not stable
+!                 I changed construction_ho to _minmod to keep
+!                 this subroutine for further tests
+!
+!-------------------------------------------------------------------------------------
+SUBROUTINE CONSTRUCTION_HO_minmod
+     USE GLOBAL
+     IMPLICIT NONE
+# if defined (CARTESIAN)
+     REAL(SP),DIMENSION(Mloc,Nloc) :: DelxU4
+     REAL(SP),DIMENSION(Mloc,Nloc) :: DelyV4
+# endif
+	
+![ykchoi	(09.07.2015)
+     REAL(SP),ALLOCATABLE :: MASK9u(:,:), MASK9v(:,:)
+     ALLOCATE( MASK9u(1:Mloc1,1:Nloc), MASK9v(1:Mloc,1:Nloc1) )
+	
+     MASK9u(1:Mloc,1:Nloc)=MASK9(1:Mloc,1:Nloc)
+     MASK9v(1:Mloc,1:Nloc)=MASK9(1:Mloc,1:Nloc)
+     
+     MASK9u(Mloc1,1:Nloc)=MASK9(Mloc,1:Nloc)
+     MASK9v(1:Mloc,Nloc1)=MASK9(1:Mloc,Nloc)
+!ykchoi]
+
+! construct in x-direction
+# if defined(CARTESIAN)
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc),UxL(1:Mloc1,1:Nloc),UxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc),VxL(1:Mloc1,1:Nloc),VxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX,MASK(1:Mloc,1:Nloc),HU(1:Mloc,1:Nloc),HUxL(1:Mloc1,1:Nloc),HUxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX,MASK(1:Mloc,1:Nloc),HV(1:Mloc,1:Nloc),HVxL(1:Mloc1,1:Nloc),HVxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc),EtaRxL(1:Mloc1,1:Nloc),EtaRxR(1:Mloc1,1:Nloc))
+# else
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc),UxL(1:Mloc1,1:Nloc),UxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc),VxL(1:Mloc1,1:Nloc),VxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),HU(1:Mloc,1:Nloc),HUxL(1:Mloc1,1:Nloc),HUxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),HV(1:Mloc,1:Nloc),HVxL(1:Mloc1,1:Nloc),HVxR(1:Mloc1,1:Nloc))
+     CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+           DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc),EtaRxL(1:Mloc1,1:Nloc),EtaRxR(1:Mloc1,1:Nloc))
+# endif
+
+
+! dispersion
+     HxL=EtaRxL+Depthx
+     HxR=EtaRxR+Depthx
+# if defined (CARTESIAN)
+     IF(DISPERSION)THEN
+      CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,DX,  &
+	MASK(1:Mloc,1:Nloc),U4(1:Mloc,1:Nloc),U4xL(1:Mloc1,1:Nloc),U4xR(1:Mloc1,1:Nloc))
+	  
+	!ykchoi :: Following V4xL, V4xR terms should be computed.
+	CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,DX,  &
+	MASK(1:Mloc,1:Nloc),V4(1:Mloc,1:Nloc),V4xL(1:Mloc1,1:Nloc),V4xR(1:Mloc1,1:Nloc))  
+     ENDIF
+
+!ykchoi (09.07.2015)
+!Followings are modified for Ghost cell at Mloc1, Nloc1
+
+     PL(1:Mloc1,1:Nloc)=HUxL(1:Mloc1,1:Nloc) &
+     + Gamma1*MASK9u(1:Mloc1,1:Nloc)*HxL(1:Mloc1,1:Nloc)*U4xL(1:Mloc1,1:Nloc)	
+
+     PR(1:Mloc1,1:Nloc)=HUxR(1:Mloc1,1:Nloc) &
+     + Gamma1*MASK9u(1:Mloc1,1:Nloc)*HxR(1:Mloc1,1:Nloc)*U4xR(1:Mloc1,1:Nloc)
+
+     FxL(1:Mloc1,1:Nloc)=Gamma3*PL(1:Mloc1,1:Nloc)*(UxL(1:Mloc1,1:Nloc)  &
+        +Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xL(1:Mloc1,1:Nloc)) &
+        +0.5*GRAV*((EtaRxL(1:Mloc1,1:Nloc))*(EtaRxL(1:Mloc1,1:Nloc))*Gamma3  &
+        +2.0_SP*(EtaRxL(1:Mloc1,1:Nloc))*(Depthx(1:Mloc1,1:Nloc)))
+
+     FxR(1:Mloc1,1:Nloc)=Gamma3*PR(1:Mloc1,1:Nloc)*(UxR(1:Mloc1,1:Nloc)  &
+        +Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xR(1:Mloc1,1:Nloc)) &
+        +0.5*GRAV*((EtaRxR(1:Mloc1,1:Nloc))*(EtaRxR(1:Mloc1,1:Nloc))*Gamma3  &
+        +2.0_SP*(EtaRxR(1:Mloc1,1:Nloc))*(Depthx(1:Mloc1,1:Nloc)))
+
+# else
+# if defined(ZALPHA)
+     IF(DISPERSION)THEN
+      CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+	DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),U4(1:Mloc,1:Nloc),U4xL(1:Mloc1,1:Nloc),U4xR(1:Mloc1,1:Nloc))
+
+	!ykchoi :: Following V4xL, V4xR terms should be computed.
+	CALL CONSTRUCT_HO_X(Mloc,Nloc,Mloc1,Ibeg,Iend,Jbeg,Jend,   &
+	DX(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),V4(1:Mloc,1:Nloc),V4xL(1:Mloc1,1:Nloc),V4xR(1:Mloc1,1:Nloc))
+     ENDIF
+
+     PL(1:Mloc1,1:Nloc)=HUxL(1:Mloc1,1:Nloc) &
+     + Gamma1*MASK9u(1:Mloc1,1:Nloc)*HxL(1:Mloc1,1:Nloc)*U4xL(1:Mloc1,1:Nloc)
+
+     PR(1:Mloc1,1:Nloc)=HUxR(1:Mloc1,1:Nloc) &
+     + Gamma1*MASK9u(1:Mloc1,1:Nloc)*HxR(1:Mloc1,1:Nloc)*U4xR(1:Mloc1,1:Nloc)
+
+     FxL(1:Mloc1,1:Nloc)=Gamma3*PL(1:Mloc1,1:Nloc)*(UxL(1:Mloc1,1:Nloc)  &
+        +Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xL(1:Mloc1,1:Nloc)) &
+        +0.5*GRAV*((EtaRxL(1:Mloc1,1:Nloc))*(EtaRxL(1:Mloc1,1:Nloc))*Gamma3  &
+        +2.0_SP*(EtaRxL(1:Mloc1,1:Nloc))*(Depthx(1:Mloc1,1:Nloc)))
+
+     FxR(1:Mloc1,1:Nloc)=Gamma3*PR(1:Mloc1,1:Nloc)*(UxR(1:Mloc1,1:Nloc)  &
+        +Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xR(1:Mloc1,1:Nloc)) &
+        +0.5*GRAV*((EtaRxR(1:Mloc1,1:Nloc))*(EtaRxR(1:Mloc1,1:Nloc))*Gamma3  &
+        +2.0_SP*(EtaRxR(1:Mloc1,1:Nloc))*(Depthx(1:Mloc1,1:Nloc)))
+
+# else
+     PL=HUxL
+     PR=HUxR
+     FxL=Gamma3*PL*UxL &
+        +0.5*GRAV*((EtaRxL)*(EtaRxL)*Gamma3+2.0_SP*(EtaRxL)*(Depthx))
+     FxR=Gamma3*PR*UxR &
+        +0.5*GRAV*((EtaRxR)*(EtaRxR)*Gamma3+2.0_SP*(EtaRxR)*(Depthx))
+# endif
+# endif
+
+
+# if defined (CARTESIAN)
+! ykchoi (15. 08. 06.)
+! Following GxL, GxR terms should be modified as Shi et al.(2012) publication
+
+	GxL(1:Mloc1,1:Nloc)=HxL(1:Mloc1,1:Nloc)*    &
+	  ( UxL(1:Mloc1,1:Nloc) + Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xL(1:Mloc1,1:Nloc) )*   &
+	  ( VxL(1:Mloc1,1:Nloc) + Gamma1*MASK9u(1:Mloc1,1:Nloc)*V4xL(1:Mloc1,1:Nloc) )*   &
+	  Gamma3
+
+	GxR(1:Mloc1,1:Nloc)=HxR(1:Mloc1,1:Nloc)*    &
+	  ( UxR(1:Mloc1,1:Nloc) + Gamma1*MASK9u(1:Mloc1,1:Nloc)*U4xR(1:Mloc1,1:Nloc) )*   &
+	  ( VxR(1:Mloc1,1:Nloc) + Gamma1*MASK9u(1:Mloc1,1:Nloc)*V4xR(1:Mloc1,1:Nloc) )*   &
+	  Gamma3
+
+# else
+
+     GxL=Gamma3*HxL*UxL*VxL
+     GxR=Gamma3*HxR*UxR*VxR
+
+# endif
+      
+! construct in y-direction
+# if defined(CARTESIAN)
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY,MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc),UyL(1:Mloc,1:Nloc1),UyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY,MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc),VyL(1:Mloc,1:Nloc1),VyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY,MASK(1:Mloc,1:Nloc),HV(1:Mloc,1:Nloc),HVyL(1:Mloc,1:Nloc1),HVyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY,MASK(1:Mloc,1:Nloc),HU(1:Mloc,1:Nloc),HUyL(1:Mloc,1:Nloc1),HUyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY,MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc),EtaRyL(1:Mloc,1:Nloc1),EtaRyR(1:Mloc,1:Nloc1))
+# else
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),U(1:Mloc,1:Nloc),UyL(1:Mloc,1:Nloc1),UyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),V(1:Mloc,1:Nloc),VyL(1:Mloc,1:Nloc1),VyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),HV(1:Mloc,1:Nloc),HVyL(1:Mloc,1:Nloc1),HVyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),HU(1:Mloc,1:Nloc),HUyL(1:Mloc,1:Nloc1),HUyR(1:Mloc,1:Nloc1))
+     CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,  &
+       DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),Eta(1:Mloc,1:Nloc),EtaRyL(1:Mloc,1:Nloc1),EtaRyR(1:Mloc,1:Nloc1))
+# endif
+
+
+! dispersion
+     HyL=EtaRyL+Depthy
+     HyR=EtaRyR+Depthy
+# if defined (CARTESIAN)
+     IF(DISPERSION)THEN
+       CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,   &
+	 DY,MASK(1:Mloc,1:Nloc),V4(1:Mloc,1:Nloc),V4yL(1:Mloc,1:Nloc1),V4yR(1:Mloc,1:Nloc1))
+
+	 !ykchoi :: Following U4yL, U4yR terms should be computed.
+	 CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,   &
+	 DY,MASK(1:Mloc,1:Nloc),U4(1:Mloc,1:Nloc),U4yL(1:Mloc,1:Nloc1),U4yR(1:Mloc,1:Nloc1))
+     ENDIF
+
+     QL(1:Mloc,1:Nloc1)=HVyL(1:Mloc,1:Nloc1)   &
+       + Gamma1*MASK9v(1:Mloc,1:Nloc1)*HyL(1:Mloc,1:Nloc1)*V4yL(1:Mloc,1:Nloc1)
+
+     QR(1:Mloc,1:Nloc1)=HVyR(1:Mloc,1:Nloc1)    &
+       + Gamma1*MASK9v(1:Mloc,1:Nloc1)*HyR(1:Mloc,1:Nloc1)*V4yR(1:Mloc,1:Nloc1)
+
+     GyL(1:Mloc,1:Nloc1)=Gamma3*QL(1:Mloc,1:Nloc1)*(VyL(1:Mloc,1:Nloc1)   &
+        +Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yL(1:Mloc,1:Nloc1)) &
+        +0.5*GRAV*((EtaRyL(1:Mloc,1:Nloc1))*(EtaRyL(1:Mloc,1:Nloc1))*Gamma3   &
+        +2.0_SP*(EtaRyL(1:Mloc,1:Nloc1))*(Depthy(1:Mloc,1:Nloc1)))
+
+     GyR(1:Mloc,1:Nloc1)=Gamma3*QR(1:Mloc,1:Nloc1)*(VyR(1:Mloc,1:Nloc1)    &
+        +Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yR(1:Mloc,1:Nloc1)) &
+        +0.5*GRAV*((EtaRyR(1:Mloc,1:Nloc1))*(EtaRyR(1:Mloc,1:Nloc1))*Gamma3    &
+        +2.0_SP*(EtaRyR(1:Mloc,1:Nloc1))*(Depthy(1:Mloc,1:Nloc1)))
+
+# else
+
+# if defined (ZALPHA)
+     IF(DISPERSION)THEN
+       CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,   &
+	 DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),V4(1:Mloc,1:Nloc),V4yL(1:Mloc,1:Nloc1),V4yR(1:Mloc,1:Nloc1))
+
+	 !ykchoi :: Following U4yL, U4yR terms should be computed.
+	 CALL CONSTRUCT_HO_Y(Mloc,Nloc,Nloc1,Ibeg,Iend,Jbeg,Jend,   &
+	 DY(1:Mloc,1:Nloc),MASK(1:Mloc,1:Nloc),U4(1:Mloc,1:Nloc),U4yL(1:Mloc,1:Nloc1),U4yR(1:Mloc,1:Nloc1))
+     ENDIF
+
+     QL(1:Mloc,1:Nloc1)=HVyL(1:Mloc,1:Nloc1)   &
+       + Gamma1*MASK9v(1:Mloc,1:Nloc1)*HyL(1:Mloc,1:Nloc1)*V4yL(1:Mloc,1:Nloc1)
+
+     QR(1:Mloc,1:Nloc1)=HVyR(1:Mloc,1:Nloc1)    &
+       + Gamma1*MASK9v(1:Mloc,1:Nloc1)*HyR(1:Mloc,1:Nloc1)*V4yR(1:Mloc,1:Nloc1)
+
+     GyL(1:Mloc,1:Nloc1)=Gamma3*QL(1:Mloc,1:Nloc1)*(VyL(1:Mloc,1:Nloc1)   &
+        +Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yL(1:Mloc,1:Nloc1)) &
+        +0.5*GRAV*((EtaRyL(1:Mloc,1:Nloc1))*(EtaRyL(1:Mloc,1:Nloc1))*Gamma3   &
+        +2.0_SP*(EtaRyL(1:Mloc,1:Nloc1))*(Depthy(1:Mloc,1:Nloc1)))
+
+     GyR(1:Mloc,1:Nloc1)=Gamma3*QR(1:Mloc,1:Nloc1)*(VyR(1:Mloc,1:Nloc1)    &
+        +Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yR(1:Mloc,1:Nloc1)) &
+        +0.5*GRAV*((EtaRyR(1:Mloc,1:Nloc1))*(EtaRyR(1:Mloc,1:Nloc1))*Gamma3    &
+        +2.0_SP*(EtaRyR(1:Mloc,1:Nloc1))*(Depthy(1:Mloc,1:Nloc1)))
+
+# else
+     QL=HVyL
+     QR=HVyR
+     GyL=Gamma3*QL*VyL &
+        +0.5*GRAV*((EtaRyL)*(EtaRyL)*Gamma3+2.0_SP*(EtaRyL)*(Depthy))
+     GyR=Gamma3*QR*VyR &
+        +0.5*GRAV*((EtaRyR)*(EtaRyR)*Gamma3+2.0_SP*(EtaRyR)*(Depthy))
+# endif
+# endif
+
+
+# if defined(CARTESIAN)
+! ykchoi (15. 08. 06.)
+! Following FyL, FyR terms should be modified as Shi et al.(2012) publication
+
+	FyL(1:Mloc,1:Nloc1)=HyL(1:Mloc,1:Nloc1)*   &
+	 ( UyL(1:Mloc,1:Nloc1) + Gamma1*MASK9v(1:Mloc,1:Nloc1)*U4yL(1:Mloc,1:Nloc1) )*   &
+	 ( VyL(1:Mloc,1:Nloc1) + Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yL(1:Mloc,1:Nloc1) )*   &
+	 Gamma3
+   	
+	FyR(1:Mloc,1:Nloc1)=HyR(1:Mloc,1:Nloc1)*   &
+	 ( UyR(1:Mloc,1:Nloc1) + Gamma1*MASK9v(1:Mloc,1:Nloc1)*U4yR(1:Mloc,1:Nloc1) )*   &
+	 ( VyR(1:Mloc,1:Nloc1) + Gamma1*MASK9v(1:Mloc,1:Nloc1)*V4yR(1:Mloc,1:Nloc1) )*   &
+	 Gamma3
+
+# else
+
+     FyL=Gamma3*HyL*UyL*VyL
+     FyR=Gamma3*HyR*UyR*VyR
+
+# endif
+
+	deallocate( MASK9u, MASK9v )   !ykchoi 
+     
+END SUBROUTINE CONSTRUCTION_HO_minmod
 
 !-------------------------------------------------------------------------------------
 !
@@ -1339,10 +1608,9 @@ SUBROUTINE CONSTRUCTION_HO
      
 ENDSUBROUTINE CONSTRUCTION_HO
 
+
 ! --------------- ykchoi (08/28/2016)
-! Reference
-! Hybrid finite-volume finite-difference scheme for the solution of Boussinesq equations
-! Erduran et al. (2005)
+! TVD-MUSCL scheme by Erduran et al. (2005)
 ! ---------------------------------------------------------------------------------------
 SUBROUTINE CONSTRUCT_HO_X(M,N,M1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
      USE PARAM
@@ -1361,8 +1629,6 @@ SUBROUTINE CONSTRUCT_HO_X(M,N,M1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
      Din=0.0_SP
      DO J=Jbeg,Jend
         
-	  ! Fourth order MUSCL TVD with van Leer and minmod limiter
-	  ! The minmod limiter is used for the fourth order part in the fourth order scheme
 	  DO I=Ibeg-1,Iend+2
            TXP1=Vin(I-1,J)-Vin(I-2,J)
            TXP2=Vin(I,J)-Vin(I-1,J)
@@ -1416,8 +1682,6 @@ SUBROUTINE CONSTRUCT_HO_X(M,N,M1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
            Din(I,J)=TXP2-1.0_SP/6.0_SP*(DVP3-2.0_SP*DVP2+DVP1)
         ENDDO
 
-	  ! Fourth order MUSCL TVD with van Leer and minmod limiter
-	  ! The van-Leer limiter is used for the third order part in the fourth order scheme
         DO I=Ibeg,Iend+1
            TMP1 = Din(I-1,J);   TMP2 = Din(I,J);
 	  
@@ -1455,9 +1719,7 @@ SUBROUTINE CONSTRUCT_HO_X(M,N,M1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
 END SUBROUTINE CONSTRUCT_HO_X
 
 ! --------------- ykchoi (08/28/2016)
-! Reference
-! Hybrid finite-volume finite-difference scheme for the solution of Boussinesq equations
-! Erduran et al. (2005)
+! TVD-MUSCL scheme by Erduran et al. (2005)
 ! ---------------------------------------------------------------------------------------
 SUBROUTINE CONSTRUCT_HO_Y(M,N,N1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
      USE PARAM
@@ -1476,8 +1738,6 @@ SUBROUTINE CONSTRUCT_HO_Y(M,N,N1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
      Din=0.0_SP
      DO I=Ibeg,Iend
 
-	  ! Fourth order MUSCL TVD with van Leer and minmod limiter
-	  ! The minmod limiter is used for the fourth order part in the fourth order scheme
      	  DO J=Jbeg-1,Jend+2
            TYP1=Vin(I,J-1)-Vin(I,J-2)
            TYP2=Vin(I,J)-Vin(I,J-1)
@@ -1530,9 +1790,7 @@ SUBROUTINE CONSTRUCT_HO_Y(M,N,N1,Ibeg,Iend,Jbeg,Jend,MASK,Vin,OutL,OutR)
 
            Din(I,J)=TYP2-1.0_SP/6.0_SP*(DVP3-2.0_SP*DVP2+DVP1)
      	  ENDDO
-     
-	  ! Fourth order MUSCL TVD with van Leer and minmod limiter
-	  ! The van-Leer limiter is used for the third order part in the fourth order scheme
+
 	  DO J=Jbeg,Jend+1
            TMP1 = Din(I,J-1);   TMP2 = Din(I,J);
 

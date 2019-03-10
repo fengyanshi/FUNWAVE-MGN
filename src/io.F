@@ -211,20 +211,35 @@ SUBROUTINE READ_INPUT
 # endif
 
 !==================== begin : nesting (AMR) !ykchoi
+      CALL READ_LOGICAL(TwoWayNesting,FILE_NAME,'TwoWayNesting',ierr)
+# if defined (PARALLEL)
+	if (myid.eq.0) then
+	   WRITE(3,*)'TwoWayNesting = ', TwoWayNesting
+	   WRITE(*,*)'TwoWayNesting = ', TwoWayNesting
+	endif
+# else
+      WRITE(3,*)'TwoWayNesting = ', TwoWayNesting
+	WRITE(*,*)'TwoWayNesting = ', TwoWayNesting
+# endif
+
 ! number of grid
       CALL READ_INTEGER(NumGrid,FILE_NAME,'SubGrid',ierr)
       NumGrid = 1+NumGrid
 
 # if defined (PARALLEL)
-      if (myid.eq.0) WRITE(3,'(A10,I12)')'NumGrid = ', NumGrid
+      if (myid.eq.0) then
+	   WRITE(3,'(A10,I12)')'NumGrid = ', NumGrid
+	   WRITE(*,*)'NumGrid = ', NumGrid
+	endif
 # else
       WRITE(3,'(A10,I12)')'NumGrid = ', NumGrid
+	WRITE(*,*)'NumGrid = ', NumGrid
 # endif
 
       ALLOCATE( GridDimX(NumGrid),GridDimY(NumGrid),  &
 	          RATIO_SPACING(NumGrid),TOTALRATIO_SPACING(NumGrid),  &
                 MboxRef(NumGrid),NboxRef(NumGrid),IsPrint(NumGrid),  &
-			  DEPTH_FILE_SUB(NumGrid) )
+			  DEPTH_FILE_SUB(NumGrid), STRUCT_FILE_SUB(NumGrid) )
 
       DO K=1,NumGrid
         GridDimX(K)=Mglob
@@ -281,14 +296,34 @@ SUBROUTINE READ_INPUT
 # endif
 		  ENDDO
 		ENDIF
+
+          READ(2,*)
+          READ(2,*) STRUCT_TYPE_SUB
+
+		IF( ADJUSTL(trim( STRUCT_TYPE_SUB(1:3) )) == 'DAT' )THEN
+
+		  DO K=2,NumGrid
+             READ(2,*) STRUCT_FILE_SUB(K)
+
+# if defined (PARALLEL)	       
+		   if (myid.eq.0) then
+		      WRITE(*,*) "STRUCT in Subgrid :",ADJUSTL( TRIM( STRUCT_FILE_SUB(K) ) )
+		      WRITE(3,*) "STRUCT in Subgrid :",ADJUSTL( TRIM( STRUCT_FILE_SUB(K) ) )
+		   endif
+# else
+	       WRITE(*,*) "STRUCT in Subgrid :",ADJUSTL( TRIM( STRUCT_FILE_SUB(K) ) )
+	       WRITE(3,*) "STRUCT in Subgrid :",ADJUSTL( TRIM( STRUCT_FILE_SUB(K) ) )
+# endif
+		  ENDDO
+		ENDIF
         CLOSE(2)
 
       ENDIF ! end numgrid>1
 
-      ALLOCATE( START_GRID(NumGrid) )
-      DO K=1,NumGrid
-        START_GRID(K)=.FALSE.
-      ENDDO
+      !ALLOCATE( START_GRID(NumGrid) )
+      !DO K=1,NumGrid
+      !  START_GRID(K)=.FALSE.
+      !ENDDO
 
       DO K=2,NumGrid
 	   TOTALRATIO_SPACING(K) = TOTALRATIO_SPACING(K-1)*RATIO_SPACING(K)
@@ -303,17 +338,23 @@ SUBROUTINE READ_INPUT
       WRITE(3,'(A15,A50)')'RESULT_FOLDER:', RESULT_FOLDER
 # endif
 
-!----ykchoi 16.10.19
 ! create result folder
-!      MKFOLDER = "mkdir -p "//TRIM(RESULT_FOLDER)
+      MKFOLDER = "mkdir -p "//TRIM(RESULT_FOLDER)
 # if defined (PARALLEL)
-!      IF (myid.eq.0) THEN
-!        CALL SYSTEM(TRIM(MKFOLDER))
-!      ENDIF
+      IF (myid.eq.0) THEN
+# if defined (INTEL)
+        RES = SYSTEM(TRIM(MKFOLDER))
 # else
-!      CALL SYSTEM(TRIM(MKFOLDER))
+        CALL SYSTEM(TRIM(MKFOLDER))
 # endif
-!----ykchoi
+      ENDIF
+# else
+# if defined(INTEL)
+      RES = SYSTEM(TRIM(MKFOLDER))
+# else
+      CALL SYSTEM(TRIM(MKFOLDER))
+# endif
+# endif
 
 ! station files
       CALL READ_INTEGER(NumberStations,FILE_NAME,'NumberStations',ierr)
@@ -1476,15 +1517,15 @@ SUBROUTINE PREVIEW_AMR(ng)
         call PutFile(TMP_NAME,VelocityMax(1:Mloc,1:Nloc))
      ENDIF
      
-     IF(OUT_MFmax)THEN                                                                                            
-        TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'MFmax_'//TRIM(FILE_NAME)                                                          
-        call PutFile(TMP_NAME,MomentumFluxMax(1:Mloc,1:Nloc))                                                                              
-     ENDIF      
+     IF(OUT_MFmax)THEN
+        TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'MFmax_'//TRIM(FILE_NAME)
+        call PutFile(TMP_NAME,MomentumFluxMax(1:Mloc,1:Nloc))
+     ENDIF
      
-     IF(OUT_VORmax)THEN                                                                                            
-        TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'VORmax_'//TRIM(FILE_NAME)                                                          
-        call PutFile(TMP_NAME,VorticityMax(1:Mloc,1:Nloc))                                                                              
-     ENDIF            
+     IF(OUT_VORmax)THEN
+        TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'VORmax_'//TRIM(FILE_NAME)
+        call PutFile(TMP_NAME,VorticityMax(1:Mloc,1:Nloc))
+     ENDIF
      
      IF(OUT_U)THEN
         TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'u_'//TRIM(FILE_NAME)
@@ -1530,7 +1571,7 @@ SUBROUTINE PREVIEW_AMR(ng)
         TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'nubrk_'//TRIM(FILE_NAME)
          call PutFile(TMP_NAME,nu_break(1:Mloc,1:Nloc))
         TMP_NAME = TRIM(FDIR)//'Grd'//Ngrid//'_'//'etat_'//TRIM(FILE_NAME)
-         call PutFile(TMP_NAME,etat(1:Mloc,1:Nloc)) 
+         call PutFile(TMP_NAME,etat(1:Mloc,1:Nloc))
       ENDIF
      
      ENDIF
