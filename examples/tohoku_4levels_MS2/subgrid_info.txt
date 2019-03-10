@@ -1,0 +1,17 @@
+% GridDimX   GridDimY  Ratio_Spacing  MboxRef  NboxRef
+2000  1200  4  1100  1350
+3600  2000  4  1001  451
+1250  1000  4  3110  1020
+610  350  4  1020  230
+% Depth Type (Data or None)
+DATA
+dep_child1.dat
+dep_child2.dat
+dep_child3.dat
+dep_child4.dat
+% Struct Type (Data or None)
+DATA
+mask_child1.dat
+mask_child2.dat
+mask_child3.dat
+mask_child4.dat
